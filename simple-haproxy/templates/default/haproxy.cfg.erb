@@ -21,8 +21,8 @@ defaults
         srvtimeout      50000
         
 # Set up application listeners here.
-listen application 0.0.0.0:80
+listen application 0.0.0.0:8080
 balance roundrobin
-<% @to_balance.each do |n| %>
+<% @webs.each do |n| %>
     server <%= n[1] %> <%= n[0]%>:80 weight 1 maxconn 5 check 
-  <% end %>
+<% end %>
