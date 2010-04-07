@@ -1,3 +1,5 @@
+include_recipe "hpc"
+
 %w{opkg-c3-4.1.3-1.noarch
 opkg-c3-server-4.1.3-1.noarch
 opkg-maui-3.2.6p19-8.noarch
@@ -10,5 +12,12 @@ opkg-switcher-1.0.7-2.noarch
 opkg-switcher-server-1.0.7-2.noarch
 opkg-torque-2.1.10-4.noarch
 opkg-torque-server-2.1.10-4.noarch
+nfs-utils nfswatch
 }.each { |pkg| package pkg }
 
+clients = search(:node, "recipe:hpc::client").map { |cfg| cfg["ipaddress"] }
+
+template "/etc/exports" do
+  source "exports.erb" 
+  variables :clients => clients
+end

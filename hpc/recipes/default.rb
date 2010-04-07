@@ -10,7 +10,7 @@ end
 
 %w{
   autoconf automake bison byacc cscope ctags
-  cvs diffstat doxygen elfutils flex frysk indent intltool libtool ltrace oprofile oprofile-gui 
+  cvs diffstat doxygen elfutils flex indent intltool libtool ltrace oprofile oprofile-gui 
   patchutils python-ldap rcs rpm-build swig systemtap texinfo valgrind gettext 
   blas blas-devel
   boost boost-devel
