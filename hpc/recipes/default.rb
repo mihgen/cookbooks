@@ -3,14 +3,10 @@ remote_file "/etc/yum.repos.d/oscar-rhel5-x86_64.repo" do
   mode 0644
 end
 
-#package "glibc.i386"
-#TODO  glibc.i386 glibc-devel.i386 install
 
-package "python-matplotlib" do
-  action :install
-  options "--disablerepo epel"
+package "epel-release" do
+  action :remove
 end
-
 
 %w{
   autoconf automake bison byacc ccache cscope ctags
@@ -34,9 +30,4 @@ end
   sysstat
   strace tcpdump
   tcl tk
-}.each do |pkg| 
-  package pkg do
-    action :install
-    options "--disablerepo epel"
-  end
-end
+}.each { |pkg| package pkg } 
