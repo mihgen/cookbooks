@@ -11,7 +11,7 @@ service "haproxy" do
   action [:enable, :start]
 end
 
-webs = search(:node, "recipe:simple-httpd").map { |w| [w[:ipaddress], w[:fqdn]] }
+webs = search(:node,"recipe:simple-httpd").map { |w| [ w["ipaddress"], w["fqdn"] ] }
 
 template "/etc/haproxy/haproxy.cfg" do
   source "haproxy.cfg.erb"
