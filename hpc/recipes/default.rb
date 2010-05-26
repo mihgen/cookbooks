@@ -31,3 +31,41 @@ end
   strace tcpdump
   tcl tk
 }.each { |pkg| package pkg } 
+
+
+storage_ulr = "http://s3.cluster.sgu.ru/packages"
+
+%w{ Python-2.6.5.tar.bz2 numpy-1.4.1.tar.gz gnuplot-py-1.8.tar.gz }.each do |pkg|
+  remote_file "/tmp/#{pkg}" do
+    source "#{storage_ulr}/#{pkg}"
+    not_if { ::File.exists?("/tmp/#{pkg}") }
+  end
+end
+
+bash "Install Python 2.6.5" do
+  cwd "/tmp"
+  code <<-EOH
+  tar xf Python-2.6.5.tar.bz2
+  cd Python-2.6.5
+  ./configure
+  make
+  make altinstall
+  EOH
+  not_if do
+    ::File.exists?("/usr/local/bin/python2.6") 
+  end
+end
+
+%w{ numpy-1.4.1.tar.gz gnuplot-py-1.8.tar.gz }.each do |pkg|
+  bash "Install Python 2.6.5 #{pkg} module" do
+    cwd "/tmp"
+    code <<-EOH
+    tar xzf #{pkg}
+    cd #{pkg.scan(/(.*).tar.gz/)}
+    /usr/local/bin/python2.6 setup.py install
+    EOH
+    not_if do
+      ::Dir["/usr/local/lib/python2.6/site-packages/#{pkg.scan(/(\w+).*/)}*"].any?
+    end
+  end
+end
