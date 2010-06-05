@@ -3,7 +3,6 @@ remote_file "/etc/yum.repos.d/oscar-rhel5-x86_64.repo" do
   mode 0644
 end
 
-
 package "epel-release" do
   action :remove
 end
@@ -32,18 +31,19 @@ end
   tcl tk
 }.each { |pkg| package pkg } 
 
+storage_url = "http://s3.cluster.sgu.ru/packages"
+directory "/root/packages" 
 
-storage_ulr = "http://s3.cluster.sgu.ru/packages"
-
-%w{ Python-2.6.5.tar.bz2 numpy-1.4.1.tar.gz gnuplot-py-1.8.tar.gz }.each do |pkg|
-  remote_file "/tmp/#{pkg}" do
-    source "#{storage_ulr}/#{pkg}"
-    not_if { ::File.exists?("/tmp/#{pkg}") }
+%w{ Python-2.6.5.tar.bz2 setuptools-0.6c11.tar.gz gnuplot-py-1.8.tar.gz }.each do |pkg|
+  remote_file "/root/packages/#{pkg}" do
+    source "#{storage_url}/#{pkg}"
+    not_if { ::File.exists?("/root/packages/#{pkg}") }
+    action :create_if_missing
   end
 end
 
 bash "Install Python 2.6.5" do
-  cwd "/tmp"
+  cwd "/root/packages"
   code <<-EOH
   tar xf Python-2.6.5.tar.bz2
   cd Python-2.6.5
@@ -56,16 +56,22 @@ bash "Install Python 2.6.5" do
   end
 end
 
-%w{ numpy-1.4.1.tar.gz gnuplot-py-1.8.tar.gz }.each do |pkg|
-  bash "Install Python 2.6.5 #{pkg} module" do
-    cwd "/tmp"
+%w{ setuptools-0.6c11.tar.gz gnuplot-py-1.8.tar.gz }.each do |pkg|
+  bash "Install #{pkg} for Python 2.6.5" do
+    cwd "/root/packages"
     code <<-EOH
     tar xzf #{pkg}
-    cd #{pkg.scan(/(.*).tar.gz/)}
-    /usr/local/bin/python2.6 setup.py install
+    cd #{pkg.scan(/(\S+)\.tar\.gz/)}
+    /usr/local/bin/python2.6 ./setup.py install
     EOH
     not_if do
       ::Dir["/usr/local/lib/python2.6/site-packages/#{pkg.scan(/(\w+).*/)}*"].any?
     end
+  end
+end
+
+%w{ numpy scipy }.each do |pkg|
+  easy_install_package pkg do
+    easy_install_binary "/usr/local/bin/easy_install-2.6"
   end
 end
