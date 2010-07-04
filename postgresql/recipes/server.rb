@@ -20,28 +20,51 @@
 include_recipe "postgresql::client" 
 
 package "postgresql"
+package "oidentd"
+
+service "oidentd" do
+  action [ :enable, :start ]
+end
+
+case node[:platform]
+when "centos","fedora"
+  package "postgresql-server"
+end
 
 service "postgresql" do
   case node[:platform]
   when "debian","ubuntu"
     service_name "postgresql-#{node.postgresql.version}"
   end
-  supports :restart => true, :status => true, :reload => true
+  action :enable
+  supports :restart => true, :status => true, :reload => true, :initdb => true, :start => true
   action :nothing
 end
 
-template "#{node[:postgresql][:dir]}/pg_hba.conf" do
-  source "pg_hba.conf.erb"
-  owner "postgres"
-  group "postgres"
-  mode 0600
-  notifies :reload, resources(:service => "postgresql")
+case node[:platform]
+when "centos","fedora"
+  bash "initdb" do
+    not_if { ::File.exists?("#{node[:postgresql][:dir]}/postgresql.conf") }
+    code <<-EOH
+    /sbin/service postgresql initdb
+    EOH
+    notifies :start, resources(:service => "postgresql")
+  end
 end
 
-template "#{node[:postgresql][:dir]}/postgresql.conf" do
-  source "postgresql.conf.erb"
-  owner "postgres"
-  group "postgres"
-  mode 0600
-  notifies :restart, resources(:service => "postgresql")
-end
+#template "#{node[:postgresql][:dir]}/pg_hba.conf" do
+  #source "pg_hba.conf.erb"
+  #owner "postgres"
+  #group "postgres"
+  #mode 0600
+  #notifies :reload, resources(:service => "postgresql")
+#end
+
+#template "#{node[:postgresql][:dir]}/postgresql.conf" do
+  #source "postgresql.conf.erb"
+  #owner "postgres"
+  #group "postgres"
+  #mode 0600
+  #notifies :restart, resources(:service => "postgresql")
+#end
+#end
