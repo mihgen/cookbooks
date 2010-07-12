@@ -37,14 +37,17 @@ service "postgresql" do
 end
 
 case node[:platform]
-when "centos","fedora"
+when "fedora"
   bash "initdb" do
     not_if { ::File.exists?("#{node[:postgresql][:dir]}/postgresql.conf") }
     code <<-EOH
     /sbin/service postgresql initdb
     EOH
-    notifies :start, resources(:service => "postgresql")
   end
+end
+
+service "postgresql" do
+  action :start
 end
 
 template "#{node[:postgresql][:dir]}/pg_hba.conf" do
