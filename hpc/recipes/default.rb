@@ -16,7 +16,7 @@ end
   emacs nano mc vim-enhanced
   gcc gcc-c++ gcc-gfortran
   gdb gdbm
-  glibc glibc-devel 
+  glibc glibc-devel
   gnuplot
   htop
   iperf
@@ -25,16 +25,20 @@ end
   python-dateutil python-matplotlib mod_python
   python-setuptools python-openbabel
   qt qt-devel qt-x11
-  screen
+  screen unzip
   sysstat
   strace tcpdump
   tcl tk
 }.each { |pkg| package pkg } 
 
+yum_package "glibc-devel" do
+  arch "i386"
+end
+
 storage_url = "http://s3.cluster.sgu.ru/packages"
 directory "/root/packages" 
 
-%w{ Python-2.6.5.tar.bz2 setuptools-0.6c11.tar.gz gnuplot-py-1.8.tar.gz }.each do |pkg|
+%w{ Python-2.6.5.tar.bz2 setuptools-0.6c11.tar.gz gnuplot-py-1.8.tar.gz dmd.2.049.zip }.each do |pkg|
   remote_file "/root/packages/#{pkg}" do
     source "#{storage_url}/#{pkg}"
     not_if { ::File.exists?("/root/packages/#{pkg}") }
@@ -42,7 +46,7 @@ directory "/root/packages"
   end
 end
 
-bash "Install Python 2.6.5" do
+bash "Installing Python 2.6.5" do
   cwd "/root/packages"
   code <<-EOH
   tar xf Python-2.6.5.tar.bz2
@@ -74,4 +78,22 @@ end
   easy_install_package pkg do
     easy_install_binary "/usr/local/bin/easy_install-2.6"
   end
+end
+
+bash "Installing dmd compiler" do
+  cwd "/root/packages"
+  code <<-EOH
+  /usr/bin/unzip dmd.2.049.zip -d /opt
+  ln -sf /opt/dmd2/linux/bin/dmd.conf /etc/dmd.conf
+  ln -sf /opt/dmd2/linux/lib/libphobos2.a /usr/lib/libphobos2.a
+  EOH
+  not_if do
+    ::File.exists?("/opt/dmd2/linux/bin/dmd") 
+  end
+end
+
+template "/etc/profile.d/dmd.sh" do
+  source "dmd.sh.erb"
+  mode 0644
+  variables(:path => "/opt/dmd2/linux/bin")
 end

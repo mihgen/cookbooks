@@ -1,0 +1,4 @@
+if ! echo $PATH | /bin/grep -q "<%= @path %>" ; then
+  PATH="$PATH:<%= @path %>"
+fi
+
