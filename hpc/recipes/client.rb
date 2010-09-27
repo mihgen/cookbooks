@@ -7,7 +7,7 @@ opkg-switcher
 opkg-torque
 }.each { |pkg| package pkg }
 
-server = search(:node, "*:*").select { |e| e.run_list.run_list_items.select{ |i| i.name == "hpc::server" }.any? }.map{ |e| e["ipaddress"] }
+server = search(:node, %q{run_list:"recipe[hpc::server]"}).map{ |e| e["ipaddress"] }
 
 mount "/home" do
   device "#{server}:/home"

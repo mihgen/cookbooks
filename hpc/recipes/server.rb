@@ -14,7 +14,7 @@ opkg-torque-server
 nfs-utils nfswatch
 }.each { |pkg| package pkg }
 
-clients = search(:node, "*:*").select { |e| e.run_list.run_list_items.select{ |i| i.name == "hpc::client" }.any? }.map{ |e| e["ipaddress"] }
+clients = search(:node, %q{run_list:"recipe[hpc::client]"}).map{ |e| e["ipaddress"] }
 
 template "/etc/exports" do
   source "exports.erb" 
