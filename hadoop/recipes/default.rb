@@ -7,9 +7,6 @@ user "#{node[:hadoop][:user]}" do
 end
 
 filename = node[:hadoop][:download_url].scan(/\/([^\/]+)$/).to_s
-log "filename: #{filename}"
-
-log "Download URL: #{node[:hadoop][:download_url]}"
 
 remote_file "#{node[:hadoop][:userhome]}/#{filename}" do
   owner node[:hadoop][:user]
@@ -20,7 +17,6 @@ remote_file "#{node[:hadoop][:userhome]}/#{filename}" do
 end
 
 unpack_dir = filename.scan(/(\S+)\.tar\.gz/).to_s
-log "Unpack dir: #{unpack_dir}"
 
 script "install_hadoop" do
   interpreter "bash"
@@ -45,10 +41,43 @@ end
   end
 end
 
-template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
-  source "core-site.xml.erb"
+%w{ core mapred }.each do |file|
+  template "#{node[:hadoop][:core_dir]}/conf/#{file}-site.xml" do
+    owner node[:hadoop][:user]
+    group node[:hadoop][:user]
+    mode 0644
+    source "#{file}-site.xml.erb"
+    variables({
+      :master_host => search(:node, %q{run_list:"recipe[hadoop::master]"}).map{ |e| e["fqdn"] }
+    })
+  end
+end
+
+%w{ hdfs-site.xml hadoop-env.sh }.each do |file|
+  template "#{node[:hadoop][:core_dir]}/conf/#{file}" do
+    owner node[:hadoop][:user]
+    group node[:hadoop][:user]
+    mode 0644
+    source "#{file}.erb"
+  end
+end
+
+template "#{node[:hadoop][:core_dir]}/conf/slaves" do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0644
+  source "slaves.erb"
   variables({
-    :master_host => search(:node, %q{run_list:"recipe[hadoop::master]"}).map{ |e| e["fqdn"] }
+    :hosts => search(:node, %q{run_list:"recipe[hadoop::slave]"}).map{ |e| e["fqdn"] }
   })
 end
 
+template "#{node[:hadoop][:core_dir]}/conf/masters" do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0644
+  source "masters.erb"
+  variables({
+    :hosts => search(:node, %q{run_list:"recipe[hadoop::master]"}).map{ |e| e["fqdn"] }
+  })
+end
