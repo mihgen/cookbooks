@@ -19,6 +19,9 @@ remote_file "#{node[:hadoop][:userhome]}/#{filename}" do
   not_if do File.exists?("#{node[:hadoop][:userhome]}/#{filename}") end
 end
 
+unpack_dir = filename.scan(/(\S+)\.tar\.gz/).to_s
+log "Unpack dir: #{unpack_dir}"
+
 script "install_hadoop" do
   interpreter "bash"
   user "#{node[:hadoop][:user]}"
@@ -26,19 +29,12 @@ script "install_hadoop" do
   cwd "#{node[:hadoop][:userhome]}"
   code <<-EOH 
   tar -kxzf #{filename}
-  ssh-keygen -q -N ""
-  #cp /home/hadoop/.ssh/id_rsa.pub /home/hadoop/.ssh/authorized_keys
-  #chmod 600 /home/hadoop/.ssh/authorized_keys
-  #ssh #{node[:hadoop][:host]} -o StrictHostKeyChecking='no'
-  #exit
   EOH
+  not_if do File.exists?("#{node[:hadoop][:userhome]}/#{unpack_dir}/conf") end
 end
 
-unpack_dir = filename.scan(/(\S+)\.tar\.gz/).to_s
-log "Unpack dir: #{unpack_dir}"
-
-link "#{node[:hadoop][:userhome]}/#{unpack_dir}" do
-  to node[:hadoop][:core_dir]
+link node[:hadoop][:core_dir] do
+  to "#{node[:hadoop][:userhome]}/#{unpack_dir}"
 end
 
 [ node[:hadoop][:hdfs_name], node[:hadoop][:hdfs_data] ].each do |dir|
@@ -49,29 +45,13 @@ end
   end
 end
 
-#template "/home/hadoop/hadoop-0.19.2/conf/hadoop-site.xml" do
-  #source "hadoop-site.xml.erb"
-  #variables({
-    #:host => "#{node[:hadoop][:host]}"
-  #})
-#end
+abc = search(:node, %q{run_list:"recipe[hadoop::master]"})
+log "DEBUBBBBBBBBBBBBBBBBBB: #{abc}"
 
-#template "#{node[:hadoop][:userhome]}/hadoop-0.19.2/conf/hadoop-env.sh" do
-  #source "hadoop-env.sh.erb"
-#end
-
-#execute "format" do
-  #command "echo Y | bin/hadoop namenode -format"
-  #cwd "#{node[:hadoop][:userhome]}/hadoop-0.19.2"
-  #user "#{node[:hadoop][:user]}"
-  #group "#{node[:hadoop][:user]}"
-##  creates "/tmp/hadoop-#{node[:hadoop][:user]}/dfs/name/current/fsimage"
-#end  
-
-#execute "start_all" do
-  #command "bin/start-all.sh #{node[:hadoop][:host]}"
-  #cwd "#{node[:hadoop][:userhome]}/hadoop-0.19.2"
-  #user "#{node[:hadoop][:user]}"
-  #group "#{node[:hadoop][:user]}"
-#end  
+template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
+  source "core-site.xml.erb"
+  variables({
+    :master_host => search(:node, %q{run_list:"recipe[hadoop::master]"})
+  })
+end
 
