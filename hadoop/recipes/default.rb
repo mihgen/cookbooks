@@ -45,13 +45,10 @@ end
   end
 end
 
-abc = search(:node, %q{run_list:"recipe[hadoop::master]"})
-log "DEBUBBBBBBBBBBBBBBBBBB: #{abc}"
-
 template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
   source "core-site.xml.erb"
   variables({
-    :master_host => search(:node, %q{run_list:"recipe[hadoop::master]"})
+    :master_host => search(:node, %q{run_list:"recipe[hadoop::master]"}).map{ |e| e["fqdn"] }
   })
 end
 
