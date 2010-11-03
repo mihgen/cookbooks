@@ -1,0 +1,6 @@
+set_unless.hbase.user = "hadoop"
+set_unless.hbase.userhome = "/hadoop"
+set_unless.hbase.download_url = "http://www.sai.msu.su/apache/hadoop/hbase/hbase-0.20.4/hbase-0.20.4.tar.gz"
+set_unless.hbase.core_dir = "#{node[:hbase][:userhome]}/hbase"
+#set_unless.hbase.hdfs_name = "#{node[:hadoop][:userhome]}/hdfs/name"
+#set_unless.hbase.hdfs_data = "#{node[:hadoop][:userhome]}/hdfs/data"
