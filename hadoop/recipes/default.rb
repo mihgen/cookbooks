@@ -41,6 +41,21 @@ end
   end
 end
 
+directory "#{node[:hadoop][:userhome]}/.ssh" do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0700
+end
+
+%w{ id_rsa id_rsa.pub authorized_keys }.each do |file|
+  cookbook_file "#{node[:hadoop][:userhome]}/.ssh/#{file}" do
+    owner node[:hadoop][:user]
+    group node[:hadoop][:user]
+    source file
+    mode "0600"
+  end
+end
+
 %w{ core mapred }.each do |file|
   template "#{node[:hadoop][:core_dir]}/conf/#{file}-site.xml" do
     owner node[:hadoop][:user]
