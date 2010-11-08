@@ -1,1 +1,1 @@
-include_recipe "hbase"
+include_recipe "hadoop::hbase"

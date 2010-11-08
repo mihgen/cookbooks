@@ -1,11 +1,9 @@
-include_recipe "java6"
-include_recipe "ssh_known_hosts"
 include_recipe "hadoop"
 
-user "#{node[:hbase][:user]}" do
-  home "#{node[:hbase][:userhome]}"
-  comment "hbase User"
-end
+#user "#{node[:hbase][:user]}" do
+  #home "#{node[:hbase][:userhome]}"
+  #comment "hbase User"
+#end
 
 filename = node[:hbase][:download_url].scan(/\/([^\/]+)$/).to_s
 log "filename: #{filename}"
@@ -37,19 +35,21 @@ link node[:hbase][:core_dir] do
   to "#{node[:hbase][:userhome]}/#{unpack_dir}"
 end
 
-%w{ hbase-site.xml hbase-env.sh }.each do |file|
-  template "#{node[:hbase][:core_dir]}/conf/#{file}" do
-    owner node[:hbase][:user]
-    group node[:hbase][:user]
-    mode 0644
-    source "#{file}.erb"
-  end
+template "#{node[:hbase][:conf_dir]}/hbase-env.sh" do
+  owner node[:hbase][:user]
+  group node[:hbase][:user]
+  mode 0644
+  source "hbase-env.sh.erb"
 end
 
-template "#{node[:hbase][:core_dir]}/conf/hbase-site.xml" do
+template "#{node[:hbase][:conf_dir]}/hbase-site.xml" do
   source "hbase-site.xml.erb"
+  owner node[:hbase][:user]
+  group node[:hbase][:user]
+  mode 0644
   variables({
-    :zk_hosts => search(:node, %q{run_list:"recipe[hadoop::zookeeper]"}).map{ |e| e["fqdn"] }
+    :zk_hosts => search(:node, %q{run_list:"recipe[hadoop::zookeeper]"}).map{ |e| e["fqdn"] },
+    :namenode_host => search(:node, %q{run_list:"recipe[hadoop::name_node]"}).map{ |e| e["fqdn"] }
   })
 end
 
