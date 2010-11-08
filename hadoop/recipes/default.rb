@@ -56,16 +56,24 @@ end
   end
 end
 
-%w{ core mapred }.each do |file|
-  template "#{node[:hadoop][:core_dir]}/conf/#{file}-site.xml" do
-    owner node[:hadoop][:user]
-    group node[:hadoop][:user]
-    mode 0644
-    source "#{file}-site.xml.erb"
-    variables({
-      :master_host => search(:node, %q{run_list:"recipe[hadoop::master]"}).map{ |e| e["fqdn"] }
-    })
-  end
+template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0644
+  source "core-site.xml.erb"
+  variables({
+    :master_host => search(:node, %q{run_list:"recipe[hadoop::name_node]"}).map{ |e| e["fqdn"] }
+  })
+end
+
+template "#{node[:hadoop][:core_dir]}/conf/mapred-site.xml" do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0644
+  source "mapred-site.xml.erb"
+  variables({
+    :master_host => search(:node, %q{run_list:"recipe[hadoop::job_tracker]"}).map{ |e| e["fqdn"] }
+  })
 end
 
 %w{ hdfs-site.xml hadoop-env.sh }.each do |file|
@@ -83,7 +91,7 @@ template "#{node[:hadoop][:core_dir]}/conf/slaves" do
   mode 0644
   source "slaves.erb"
   variables({
-    :hosts => search(:node, %q{run_list:"recipe[hadoop::slave]"}).map{ |e| e["fqdn"] }
+    :hosts => []  #search(:node, %q{run_list:"recipe[hadoop::slave]"}).map{ |e| e["fqdn"] }
   })
 end
 
@@ -93,6 +101,6 @@ template "#{node[:hadoop][:core_dir]}/conf/masters" do
   mode 0644
   source "masters.erb"
   variables({
-    :hosts => search(:node, %q{run_list:"recipe[hadoop::master]"}).map{ |e| e["fqdn"] }
+    :hosts => []  #search(:node, %q{run_list:"recipe[hadoop::master]"}).map{ |e| e["fqdn"] }
   })
 end
