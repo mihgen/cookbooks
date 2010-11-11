@@ -47,13 +47,33 @@ directory "#{node[:hadoop][:userhome]}/.ssh" do
   mode 0700
 end
 
-%w{ id_rsa id_rsa.pub authorized_keys }.each do |file|
-  cookbook_file "#{node[:hadoop][:userhome]}/.ssh/#{file}" do
-    owner node[:hadoop][:user]
-    group node[:hadoop][:user]
-    source file
-    mode "0600"
+script "Generating ssh keypair" do
+  interpreter "bash"
+  user "#{node[:hadoop][:user]}"
+  group "#{node[:hadoop][:user]}"
+  cwd "#{node[:hadoop][:userhome]}"
+  code <<-EOH 
+  ssh-keygen -f #{node[:hadoop][:userhome]}/.ssh/id_rsa -q -N "" -C "Generated on #{node[:fqdn]}."
+  EOH
+  not_if do File.exists?("#{node[:hadoop][:userhome]}/.ssh/id_rsa") end
+end
+
+ruby_block "reload_client_config" do
+  block do
+    file = "#{node[:hadoop][:userhome]}/.ssh/id_rsa.pub"
+    node[:hadoop][:ssh_public_key] = File.readlines(file) if File.exists?(file)
   end
+end
+
+log "Found public key: #{node[:hadoop][:ssh_public_key]}"
+
+template "#{node[:hadoop][:userhome]}/.ssh/authorized_keys" do
+  owner node[:hadoop][:user]
+  mode 0600
+  source "authorized_keys.erb"
+  variables({
+    :public_keys => search(:node, 'run_list:recipe\[hadoop*\]').map{ |e| e["hadoop"]["ssh_public_key"] }
+  })
 end
 
 template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
