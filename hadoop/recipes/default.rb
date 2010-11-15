@@ -47,7 +47,7 @@ directory "#{node[:hadoop][:userhome]}/.ssh" do
   mode 0700
 end
 
-script "Generating ssh keypair" do
+s = script "Generating ssh keypair" do
   interpreter "bash"
   user "#{node[:hadoop][:user]}"
   group "#{node[:hadoop][:user]}"
@@ -55,15 +55,12 @@ script "Generating ssh keypair" do
   code <<-EOH 
   ssh-keygen -f #{node[:hadoop][:userhome]}/.ssh/id_rsa -q -N "" -C "Generated on #{node[:fqdn]}."
   EOH
-  not_if do File.exists?("#{node[:hadoop][:userhome]}/.ssh/id_rsa") end
+  action :nothing
 end
+s.run_action(:run) unless File.exists?("#{node[:hadoop][:userhome]}/.ssh/id_rsa")
 
-ruby_block "Load public key" do
-  block do
-    file = "#{node[:hadoop][:userhome]}/.ssh/id_rsa.pub"
-    node[:hadoop][:ssh_public_key] = File.readlines(file) if File.exists?(file)
-  end
-end
+file = "#{node[:hadoop][:userhome]}/.ssh/id_rsa.pub"
+node[:hadoop][:ssh_public_key] = File.readlines(file) if File.exists?(file)
 
 log "Found public key: #{node[:hadoop][:ssh_public_key]}"
 
