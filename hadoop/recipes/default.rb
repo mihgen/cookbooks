@@ -72,7 +72,7 @@ template "#{node[:hadoop][:userhome]}/.ssh/authorized_keys" do
   mode 0600
   source "authorized_keys.erb"
   variables({
-    :public_keys => search(:node, 'run_list:recipe\[hadoop*\]').map{ |e| e["hadoop"]["ssh_public_key"] }
+    :public_keys => search(:node, 'run_list:recipe\[hadoop*\]').map{ |e| e["hadoop"]["ssh_public_key"] unless e["hadoop"].nil? }
   })
 end
 
