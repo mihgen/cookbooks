@@ -58,7 +58,7 @@ script "Generating ssh keypair" do
   not_if do File.exists?("#{node[:hadoop][:userhome]}/.ssh/id_rsa") end
 end
 
-ruby_block "reload_client_config" do
+ruby_block "Load public key" do
   block do
     file = "#{node[:hadoop][:userhome]}/.ssh/id_rsa.pub"
     node[:hadoop][:ssh_public_key] = File.readlines(file) if File.exists?(file)
