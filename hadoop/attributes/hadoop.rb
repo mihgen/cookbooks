@@ -27,6 +27,8 @@ hadoop_precmd = "#{hadoop_setvar}; ./hadoop-daemon.sh --config #{node[:hadoop][:
 hbase_setvar = "cd #{node[:hbase][:core_dir]}/bin; export JAVA_HOME=#{node[:java][:home]}; export HBASE_HOME=#{node[:hbase][:core_dir]}"
 hbase_precmd = "#{hbase_setvar}; ./hbase-daemon.sh --config #{node[:hbase][:conf_dir]}"
 
+set.hadoop.daemons_in_order = %w{ name_node data_node secondary_name_node job_tracker task_tracker zookeeper hbase_master region_server }
+
 set.hadoop.daemons.name_node.start_cmd = "#{hadoop_precmd} start namenode"
 set.hadoop.daemons.name_node.stop_cmd = "#{hadoop_precmd} stop namenode"
 set.hadoop.daemons.name_node.clean_cmd = "#{hadoop_setvar}; rm -rf #{node[:hadoop][:hdfs_name]}/*; echo Y | #{node[:hadoop][:core_dir]}/bin/hadoop namenode -format"

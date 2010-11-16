@@ -1,5 +1,5 @@
-node[:hadoop][:daemons].each do |daemon|
-  start_daemons daemon[0] do
-    command node[:hadoop][:daemons][daemon[0].to_sym][:stop_cmd]
+node[:hadoop][:daemons_in_order].each do |daemon|
+  start_daemons daemon do
+    command node[:hadoop][:daemons][daemon.to_sym][:stop_cmd]
   end
 end
