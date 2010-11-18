@@ -1,42 +1,24 @@
 include_recipe "java6"
 include_recipe "ssh_known_hosts"
 
-# TODO: Move ssh-keygen related staff to separate place and create hadoop user using standard resource from Chef
-s = script "Creating Hadoop user" do
-  interpreter "bash"
-  code <<-EOH 
-  useradd -c 'hadoop User' -d '#{node[:hadoop][:userhome]}' #{node[:hadoop][:user]}
-  EOH
-  action :nothing
+user "#{node[:hadoop][:user]}" do
+  home "#{node[:hadoop][:userhome]}"
+  comment "hadoop User"
 end
-s.run_action(:run) unless File.readlines('/etc/passwd').select {|e| e =~ /#{node[:hadoop][:user]}/ }.any?
 
-s = script "Generating ssh keypair" do
-  interpreter "bash"
-  user "#{node[:hadoop][:user]}"
-  group "#{node[:hadoop][:user]}"
-  cwd "#{node[:hadoop][:userhome]}"
-  code <<-EOH 
-  mkdir #{node[:hadoop][:userhome]}/.ssh
-  chmod 700 #{node[:hadoop][:userhome]}/.ssh
-  ssh-keygen -f #{node[:hadoop][:userhome]}/.ssh/id_rsa -q -N "" -C "Generated on #{node[:fqdn]}."
-  EOH
-  action :nothing
-end
-s.run_action(:run) unless File.exists?("#{node[:hadoop][:userhome]}/.ssh/id_rsa")
-
-file = "#{node[:hadoop][:userhome]}/.ssh/id_rsa.pub"
-node[:hadoop][:ssh_public_key] = File.readlines(file) if File.exists?(file)
-
-log "Found public key: #{node[:hadoop][:ssh_public_key]}"
-
-template "#{node[:hadoop][:userhome]}/.ssh/authorized_keys" do
+directory "#{node[:hadoop][:userhome]}/.ssh" do
   owner node[:hadoop][:user]
-  mode 0600
-  source "authorized_keys.erb"
-  variables({
-    :public_keys => search(:node, 'run_list:recipe\[hadoop*\]').map{ |e| e["hadoop"]["ssh_public_key"] unless e["hadoop"].nil? }
-  })
+  group node[:hadoop][:user]
+  mode 0700
+end
+
+%w{ id_rsa id_rsa.pub authorized_keys }.each do |file|
+  cookbook_file "#{node[:hadoop][:userhome]}/.ssh/#{file}" do
+    owner node[:hadoop][:user]
+    group node[:hadoop][:user]
+    source file
+    mode "0600"
+  end
 end
 
 filename = node[:hadoop][:download_url].scan(/\/([^\/]+)$/).to_s
