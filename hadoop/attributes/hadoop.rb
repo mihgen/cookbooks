@@ -45,7 +45,7 @@ hbase_precmd = "#{hbase_setvar}; ./hbase-daemon.sh --config #{node[:hbase][:conf
 
 set.hadoop.daemons_in_order = %w{ name_node data_node secondary_name_node job_tracker task_tracker zookeeper hbase_master region_server }
 
-set.hadoop.daemons.name_node.start_cmd = "#{hadoop_precmd} start namenode"
+set.hadoop.daemons.name_node.start_cmd = "#{hadoop_precmd} start namenode; jps|grep NameNode|cut -d' ' -f1  > #{node[:hadoop][:userhome]}/namenode.pid"
 set.hadoop.daemons.name_node.stop_cmd = "#{hadoop_precmd} stop namenode"
 set.hadoop.daemons.name_node.clean_cmd = "#{hadoop_setvar}; rm -rf #{node[:hadoop][:hdfs_name]}/*; echo Y | #{node[:hadoop][:core_dir]}/bin/hadoop namenode -format"
 
