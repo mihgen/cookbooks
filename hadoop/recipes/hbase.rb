@@ -42,6 +42,12 @@ template "#{node[:hbase][:conf_dir]}/hbase-env.sh" do
   source "hbase-env.sh.erb"
 end
 
+if node[:hadoop][:ha].any?
+  name_node_fqdn = node[:hadoop][:ha][:fqdn]
+else
+  name_node_fqdn = search(:node, %q{run_list:"recipe[hadoop::name_node]"}).map{ |e| e["fqdn"] }
+end
+
 template "#{node[:hbase][:conf_dir]}/hbase-site.xml" do
   source "hbase-site.xml.erb"
   owner node[:hbase][:user]
@@ -49,7 +55,7 @@ template "#{node[:hbase][:conf_dir]}/hbase-site.xml" do
   mode 0644
   variables({
     :zk_hosts => search(:node, %q{run_list:"recipe[hadoop::zookeeper]"}).map{ |e| e["fqdn"] },
-    :namenode_host => search(:node, %q{run_list:"recipe[hadoop::name_node]"}).map{ |e| e["fqdn"] }
+    :namenode_host => name_node_fqdn
   })
 end
 

@@ -1,0 +1,24 @@
+#!/bin/bash
+echo "$1" >> /etc/keepalived/notify.log
+case "$1" in
+
+start)
+su - hadoop -c "cd /hadoop/core/bin; export JAVA_HOME=/usr/java/jdk1.6.0_16; export HADOOP_HOME=/hadoop/core; sleep 1; ./hadoop-daemon.sh --config /hadoop/core/conf start namenode; jps|grep NameNode|cut -d' ' -f1  > /hadoop/namenode.pid"
+;;
+
+stop)
+kill `jps|grep NameNode|cut -d' ' -f1`
+sleep 1
+kill -9 `jps|grep NameNode|cut -d' ' -f1`
+;;
+
+*)
+
+echo "Usage: $0 start"
+
+exit 0
+
+esac
+
+exit 0
+

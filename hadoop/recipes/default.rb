@@ -56,13 +56,19 @@ end
   end
 end
 
+if node[:hadoop][:ha].any?
+  name_node_fqdn = node[:hadoop][:ha][:fqdn]
+else
+  name_node_fqdn = search(:node, %q{run_list:"recipe[hadoop::name_node]"}).map{ |e| e["fqdn"] }
+end
+
 template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
   owner node[:hadoop][:user]
   group node[:hadoop][:user]
   mode 0644
   source "core-site.xml.erb"
   variables({
-    :master_host => search(:node, %q{run_list:"recipe[hadoop::name_node]"}).map{ |e| e["fqdn"] }
+    :master_host => name_node_fqdn
   })
 end
 

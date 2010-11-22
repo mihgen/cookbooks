@@ -1,0 +1,53 @@
+! Configuration File for keepalived
+
+global_defs {
+   notification_email {
+   mscherbakov@griddynamics.com
+   }
+   notification_email_from mscherbakov@griddynamics.com
+   smtp_server mail.carina.griddynamics.net
+   smtp_connect_timeout 30
+   router_id LVS_DEVEL
+}
+
+vrrp_script chk_namenode {
+        script "kill -0 `cat <%= @node[:hadoop][:userhome] %>/namenode.pid`"
+        interval 2
+        weight <%= @weights[:namenode_weight] %>
+}
+
+vrrp_script chk_gluster_ser {
+        script "killall -0 glusterfsd"
+        interval 2
+        weight <%= @weights[:gluster_ser_weight] %>
+}
+
+vrrp_script chk_gluster_cli {
+        script "killall -0 glusterfs"
+        interval 2
+        weight <%= @weights[:gluster_cli_weight] %>
+}
+
+vrrp_instance VI_1 {
+    state MASTER
+    interface eth0
+    virtual_router_id 51
+    priority <%= @weights[:priority] %>
+    advert_int 1
+    authentication {
+        auth_type PASS
+        auth_pass <%= @node[:hadoop][:ha][:keepalived_pass] %>
+    }
+    track_script {
+        chk_namenode 
+        chk_gluster_ser
+        chk_gluster_cli
+    }
+    virtual_ipaddress {
+        <%= @node[:hadoop][:ha][:ip] %>/<%= @node[:hadoop][:ha][:subnet] %> brd <%= @node[:hadoop][:ha][:broadcast] %> dev <%= @node[:hadoop][:ha][:interface] %>
+    }
+    notify_master "/etc/keepalived/notify.sh start"
+    notify_backup "/etc/keepalived/notify.sh stop"
+    notify_fault "/etc/keepalived/notify.sh stop"
+}
+

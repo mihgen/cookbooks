@@ -11,6 +11,22 @@ set.hadoop.conf_dir = "#{node[:hadoop][:core_dir]}/conf"
 set.hadoop.hdfs_name = "#{node[:hadoop][:userhome]}/hdfs/name"
 set.hadoop.hdfs_data = "#{node[:hadoop][:userhome]}/hdfs/data"
 
+# HA Hadoop settings. Comment all of them to disable.
+set.hadoop.ha.fqdn = "ras-namenode2.vm.griddynamics.net"
+set.hadoop.ha.ip = "172.16.68.25"
+set.hadoop.ha.subnet = "23"
+set.hadoop.ha.broadcast = "172.16.69.255"
+set.hadoop.ha.interface = "eth0"
+set.hadoop.ha.keepalived_pass = "jsk_92KWBAajd@dk"
+set.hadoop.ha.master.namenode_weight = "10"
+set.hadoop.ha.master.gluster_ser_weight = "5"
+set.hadoop.ha.master.gluster_cli_weight = "20"
+set.hadoop.ha.master.priority = "100"
+set.hadoop.ha.backup.namenode_weight = "5"
+set.hadoop.ha.backup.gluster_ser_weight = "10"
+set.hadoop.ha.backup.gluster_cli_weight = "20"
+set.hadoop.ha.backup.priority = "99"
+
 # HBASE settings
 set.hbase.user = "hadoop"
 set.hbase.userhome = "/hadoop"
