@@ -1,0 +1,5 @@
+maintainer        "Mike Scherbakov"
+maintainer_email  "mihgen@gmail.com"
+license           "Apache 2.0"
+description       "Installs keepalived. Separate recipe to set up configuration should be used."
+version           "0.1"

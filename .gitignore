@@ -1,3 +1,4 @@
 *.swp
 hadoop/files/default/id_rsa*
 hadoop/files/default/authorized*
+*.json
