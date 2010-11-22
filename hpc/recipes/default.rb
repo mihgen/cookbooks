@@ -32,7 +32,7 @@ end
 }.each { |pkg| package pkg } 
 
 yum_package "glibc-devel" do
-  arch "i386"
+  arch "i686"
 end
 
 storage_url = "http://s3.cluster.sgu.ru/packages"
@@ -60,7 +60,7 @@ bash "Installing Python 2.6.5" do
   end
 end
 
-%w{ setuptools-0.6c11.tar.gz gnuplot-py-1.8.tar.gz }.each do |pkg|
+%w{ setuptools-0.6c11.tar.gz }.each do |pkg|
   bash "Install #{pkg} for Python 2.6.5" do
     cwd "/root/packages"
     code <<-EOH
@@ -74,9 +74,25 @@ end
   end
 end
 
+# Issue with checking if package already installed: http://tickets.opscode.com/browse/CHEF-1889
 %w{ numpy scipy }.each do |pkg|
   easy_install_package pkg do
     easy_install_binary "/usr/local/bin/easy_install-2.6"
+  end
+end
+
+# gnuplot needs numpy installed
+%w{ gnuplot-py-1.8.tar.gz }.each do |pkg|
+  bash "Install #{pkg} for Python 2.6.5" do
+    cwd "/root/packages"
+    code <<-EOH
+    tar xzf #{pkg}
+    cd #{pkg.scan(/(\S+)\.tar\.gz/)}
+    /usr/local/bin/python2.6 ./setup.py install
+    EOH
+    not_if do
+      ::Dir["/usr/local/lib/python2.6/site-packages/#{pkg.scan(/(\w+).*/)}*"].any?
+    end
   end
 end
 

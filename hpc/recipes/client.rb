@@ -1,3 +1,4 @@
+include_recipe "hpc"
 
 %w{opkg-c3
 opkg-maui
