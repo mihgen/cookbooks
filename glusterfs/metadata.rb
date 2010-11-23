@@ -1,0 +1,5 @@
+maintainer        "Mike Scherbakov"
+maintainer_email  "mihgen@gmail.com"
+license           "Apache 2.0"
+description       "Installs GlusterFS distributed filesystem"
+version           "0.1"

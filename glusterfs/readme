@@ -1,0 +1,6 @@
+Current configuration set up glusterfs in replicated mode. Each server uses /gluster dir for raw data and /mnt/glusterfs as mounted Gluster storage.
+
+This cookbook currently works only for RedHat based distrib for 32bit system.
+In templates/default/glusterfsd.vol.erb property
+    option auth.addr.brick.allow *
+should be changed to allow only authorized hosts.

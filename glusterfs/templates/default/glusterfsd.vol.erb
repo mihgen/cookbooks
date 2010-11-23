@@ -1,0 +1,32 @@
+volume posix
+ type storage/posix
+ option directory <%= @node[:glusterfs][:storage_dir] %>
+end-volume
+
+volume locks
+ type features/locks
+ subvolumes posix
+end-volume
+
+volume io-threads
+ type performance/io-threads
+ option thread-count 4
+ subvolumes locks
+end-volume
+
+volume brick
+ type performance/io-cache
+ option cache-size 128MB
+ option cache-timeout 2
+ subvolumes io-threads
+end-volume
+
+volume server
+ type protocol/server
+ option transport-type tcp
+ option transport.socket.bind-address 0.0.0.0
+ option client-volume-filename <%= @node[:glusterfs][:confdir] %>/glusterfs.vol
+ option auth.addr.brick.allow *
+ subvolumes brick
+end-volume
+

@@ -1,0 +1,33 @@
+<% @gluster_hosts.each_with_index do |host, ind| %>
+volume mon<%= ind %>
+ type protocol/client
+ option transport-type tcp
+ option remote-host <%= host %>
+ option remote-subvolume brick
+end-volume
+<% end %>
+
+volume replicate
+ type cluster/replicate
+ subvolumes <%= @gluster_hosts.map{ |e| "mon#{@gluster_hosts.index(e)}" }.join(' ') %>
+ option read-subvolume mon0
+end-volume
+
+volume files-io
+ type performance/io-threads
+ option thread-count 4
+ subvolumes replicate
+end-volume
+
+volume writebehind
+ type performance/write-behind
+ option cache-size 4MB
+ subvolumes files-io
+end-volume
+
+volume cache
+ type performance/io-cache
+ option cache-size 128MB
+ subvolumes writebehind
+end-volume
+
