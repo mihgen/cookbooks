@@ -1,3 +1,5 @@
+include_recipe "ssh_known_hosts"
+
 remote_file "/etc/yum.repos.d/oscar-rhel5-x86_64.repo" do
   source "oscar-rhel5-x86_64.repo"
   mode 0644
