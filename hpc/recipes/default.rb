@@ -34,7 +34,13 @@ end
 }.each { |pkg| package pkg } 
 
 yum_package "glibc-devel" do
+  arch "i386"
+  ignore_failure true
+end
+
+yum_package "glibc-devel" do
   arch "i686"
+  ignore_failure true
 end
 
 storage_url = "http://s3.cluster.sgu.ru/packages"
