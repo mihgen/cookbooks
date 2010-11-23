@@ -33,6 +33,13 @@ service "glusterfsd" do
   action :enable
 end
 
+mount node[:glusterfs][:mount_dir] do
+  device "127.0.0.1:#{node[:glusterfs][:storage_dir]}"
+  fstype "glusterfs"
+  options "rw"
+  action [:mount, :enable]
+end
+
 [ node[:glusterfs][:storage_dir], node[:glusterfs][:mount_dir] ].each do |dir|
   directory dir do
     mode "0755"
@@ -40,15 +47,20 @@ end
   end
 end
 
-%w{ glusterfs.vol glusterfsd.vol }.each do |tmpl|
-  template "#{node[:glusterfs][:conf_dir]}/#{tmpl}" do
-    mode 0644
-    source "#{tmpl}.erb"
-    variables({
-      :gluster_hosts => search(:node, %q{run_list:"recipe[glusterfs]"}).map{ |e| e["fqdn"] }
-    })
-    notifies :restart, resources(:service => "glusterfsd")
-  end
+template "#{node[:glusterfs][:conf_dir]}/glusterfsd.vol" do
+  mode 0644
+  source "glusterfsd.vol.erb"
+  notifies :restart, resources(:service => "glusterfsd")
 end
 
-# TODO: mount it. Notification if glusterfs.vol changes??
+template "#{node[:glusterfs][:conf_dir]}/glusterfs.vol" do
+  mode 0644
+  source "glusterfs.vol.erb"
+  variables({
+    :gluster_hosts => search(:node, %q{run_list:"recipe[glusterfs]"}).map{ |e| e["fqdn"] }
+  })
+  # mount resource doesn't support 'remount' ??? 
+  notifies :umount, resources(:mount => node[:glusterfs][:mount_dir])
+  notifies :mount, resources(:mount => node[:glusterfs][:mount_dir])
+end
+

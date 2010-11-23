@@ -25,7 +25,7 @@ volume server
  type protocol/server
  option transport-type tcp
  option transport.socket.bind-address 0.0.0.0
- option client-volume-filename <%= @node[:glusterfs][:confdir] %>/glusterfs.vol
+ option client-volume-filename <%= @node[:glusterfs][:conf_dir] %>/glusterfs.vol
  option auth.addr.brick.allow *
  subvolumes brick
 end-volume

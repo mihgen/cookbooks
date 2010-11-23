@@ -5,8 +5,8 @@ volume mon<%= ind %>
  option remote-host <%= host %>
  option remote-subvolume brick
 end-volume
-<% end %>
 
+<% end %>
 volume replicate
  type cluster/replicate
  subvolumes <%= @gluster_hosts.map{ |e| "mon#{@gluster_hosts.index(e)}" }.join(' ') %>
