@@ -1,5 +1,6 @@
 maintainer        "Mike Scherbakov"
 maintainer_email  "mihgen@gmail.com"
 license           "Apache 2.0"
-description       "Installs GlusterFS distributed filesystem"
+description       "Installs and configures GlusterFS"
+long_description  IO.read(File.join(File.dirname(__FILE__), 'README.rdoc'))
 version           "0.1"
