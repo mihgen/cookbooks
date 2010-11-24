@@ -16,8 +16,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-include_recipe "java"
-include_recipe "runit"
+include_recipe "java6"
+#include_recipe "runit"
 
 remote_file "/tmp/zookeeper-#{node[:zookeeper][:version]}.tar.gz" do
   source "http://mirrors.ibiblio.org/pub/mirrors/apache/hadoop/zookeeper/zookeeper-#{node[:zookeeper][:version]}/zookeeper-#{node[:zookeeper][:version]}.tar.gz"
@@ -25,8 +25,9 @@ remote_file "/tmp/zookeeper-#{node[:zookeeper][:version]}.tar.gz" do
 end
 
 user "zookeeper" do
+  home "/var/lib/zookeeper"
+  shell "/bin/bash"
   uid 61001
-  gid "nogroup"
 end
 
 ["/usr/lib/zookeeper-#{node[:zookeeper][:version]}", "/etc/zookeeper"].each do |dir|
@@ -40,24 +41,7 @@ end
 ["/var/log/zookeeper", "/var/lib/zookeeper"].each do |dir|
   directory dir do
     owner "zookeeper"
-    group "nogroup"
     mode 0755
-  end
-end
-
-if node[:ec2]
-  directory "/mnt/zookeeper" do
-    owner "zookeeper"
-    group "nogroup"
-    mode 0755
-  end
-
-  # put lib dir on /mnt
-  mount "/var/lib/zookeeper" do
-    device "/mnt/zookeeper"
-    fstype "none"
-    options "bind,rw"
-    action :mount
   end
 end
 
@@ -106,12 +90,9 @@ template "/etc/zookeeper/zoo.cfg" do
   variables(:servers => zk_servers)
 end
 
-include_recipe "zookeeper::ebs_volume"
-
 directory node[:zookeeper][:data_dir] do
   recursive true
   owner "zookeeper"
-  group "nogroup"
   mode 0755
 end
 
@@ -120,12 +101,17 @@ myid = zk_servers.collect { |n| n[:ipaddress] }.index(node[:ipaddress])
 template "#{node[:zookeeper][:data_dir]}/myid" do
   source "myid.erb"
   owner "zookeeper"
-  group "nogroup"
   variables(:myid => myid)
 end
 
-runit_service "zookeeper"
-
-service "zookeeper" do
-  subscribes :restart, resources(:template => "/etc/zookeeper/zoo.cfg")
+template "/var/lib/zookeeper/zoo-start.sh" do
+  source "zoo-start.sh.erb"
+  mode 0755
+  owner "zookeeper"
 end
+
+#runit_service "zookeeper"
+
+#service "zookeeper" do
+  #subscribes :restart, resources(:template => "/etc/zookeeper/zoo.cfg")
+#end

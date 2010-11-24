@@ -1,0 +1,12 @@
+#!/bin/bash
+[[ `whoami` == "zookeeper" ]] || { echo "ERROR: This script should be run only under zookeeper user! Exiting."; exit 1; }
+CLASSPATH="/etc/zookeeper:/usr/lib/zookeeper/*:/usr/lib/zookeeper/lib/*"
+ZOOMAIN="org.apache.zookeeper.server.quorum.QuorumPeerMain"
+ZOOCFG="/etc/zookeeper/zoo.cfg"
+
+ZOO_LOG_DIR="."
+ZOO_LOG4J_PROP="INFO,CONSOLE"
+
+nohup java  "-Dzookeeper.log.dir=${ZOO_LOG_DIR}" "-Dzookeeper.root.logger=${ZOO_LOG4J_PROP}" -cp $CLASSPATH $JVMFLAGS $ZOOMAIN $ZOOCFG > ${ZOO_LOG_DIR}/zoo-start.log 2>&1 &
+echo "Seems to be Ok."
+

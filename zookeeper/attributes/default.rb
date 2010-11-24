@@ -10,6 +10,3 @@ set_unless[:zookeeper][:leader_port] = 3888
 
 set_unless[:zookeeper][:data_dir] = "/var/lib/zookeeper/data"
 set_unless[:zookeeper][:version] = "3.3.0"
-
-set_unless[:zookeeper][:ebs_vol_dev] = "/dev/sdp"
-set_unless[:zookeeper][:ebs_vol_size] = 10
