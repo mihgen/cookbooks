@@ -4,7 +4,7 @@ include_recipe "hpc"
 opkg-mpich
 opkg-sc3
 opkg-switcher
-opkg-torque-client
+torque-client
 opkg-maui-client
 }.each { |pkg| package pkg }
 
