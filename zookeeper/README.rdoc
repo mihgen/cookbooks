@@ -1,0 +1,71 @@
+= DESCRIPTION:
+
+Installs and configures Zookeeper.
+
+= REQUIREMENTS:
+
+== Platform:
+
+Tested on Ubuntu 9.10 on EC2 only.  YMMV on other platforms.
+
+==Cookbooks:
+
+Requres Opscode's runit and java cookbooks.  
+
+= ATTRIBUTES:
+
+You may need to tweak the tick_time, init_limit, and sync_limit attributes for 
+your environment.
+
+It's a good idea to change the cluster_name attribute to something 
+meaningful, like "production".
+
+= USAGE:
+
+This cookbook makes a few assumptions about where files live:
+
+/etc/zookeeper: configuration files
+/var/lib/zookeeper: zookeeper runtime files
+/var/log/zookeeper: zookeeper log directory
+
+Use zookeeper::default to install and configure zookeeper, and start the 
+zookeeper service.
+
+The zookeeper::ebs_volume recipe searches for zookeeper volumes in the 
+zookeeper databag and tries to attach one of them.  If none are available, the 
+recipe creates a new volume and databag item.  This recipe is included by 
+default, but is a no-op if not running on ec2.  The zookeeper databag must be 
+created before using.
+
+The ebs_volume recipe expects an "aws" databag with a "main" databag 
+item.  The schema of this item is:
+{
+  "aws_access_key_id":
+  "aws_secret_access_key":
+  "aws_account_id":
+  "ec2_cert":
+  "ec2_private_key":
+}
+
+Note that servers in zoo.cfg are ordered by id, and this order may change if 
+new servers are added to an existing cluster.  Is it possible that data could 
+be lost if a new server is elected leader.  This could be avoided if new 
+servers were always sorted last in the list, but I'm not sure how to do that.
+
+= LICENSE and AUTHOR:
+
+Author:: Grant Rodgers (<grant@gotime.com>)
+
+Copyright:: 2010, GoTime Inc.
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
