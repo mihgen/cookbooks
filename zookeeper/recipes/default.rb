@@ -22,6 +22,8 @@ include_recipe "java6"
 remote_file "/tmp/zookeeper-#{node[:zookeeper][:version]}.tar.gz" do
   source "http://mirrors.ibiblio.org/pub/mirrors/apache/hadoop/zookeeper/zookeeper-#{node[:zookeeper][:version]}/zookeeper-#{node[:zookeeper][:version]}.tar.gz"
   mode "0644"
+  not_if { ::File.exists?("/tmp/zookeeper-#{node[:zookeeper][:version]}.tar.gz") }
+  action :create_if_missing
 end
 
 user "zookeeper" do
