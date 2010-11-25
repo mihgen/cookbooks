@@ -8,10 +8,11 @@ set.hadoop.userhome = "/hadoop"
 set.hadoop.download_url = "http://www.sai.msu.su/apache/hadoop/core/hadoop-0.20.2/hadoop-0.20.2.tar.gz"
 set.hadoop.core_dir = "#{node[:hadoop][:userhome]}/core"
 set.hadoop.conf_dir = "#{node[:hadoop][:core_dir]}/conf"
-set.hadoop.hdfs_name = "#{node[:hadoop][:userhome]}/hdfs/name"
+set.hadoop.hdfs_name_default = "#{node[:hadoop][:userhome]}/hdfs/name"   # For HA another dir is used, see name_node recipe.
 set.hadoop.hdfs_data = "#{node[:hadoop][:userhome]}/hdfs/data"
 
 # HA Hadoop settings. Comment all of them to disable.
+set.hadoop.ha.status = "enabled"
 set.hadoop.ha.fqdn = "ras-namenode2.vm.griddynamics.net"
 set.hadoop.ha.ip = "172.16.68.25"
 set.hadoop.ha.subnet = "23"
@@ -43,7 +44,13 @@ hadoop_precmd = "#{hadoop_setvar}; ./hadoop-daemon.sh --config #{node[:hadoop][:
 hbase_setvar = "cd #{node[:hbase][:core_dir]}/bin; export JAVA_HOME=#{node[:java][:home]}; export HBASE_HOME=#{node[:hbase][:core_dir]}"
 hbase_precmd = "#{hbase_setvar}; ./hbase-daemon.sh --config #{node[:hbase][:conf_dir]}"
 
-set.hadoop.daemons_in_order = %w{ name_node data_node secondary_name_node job_tracker task_tracker zookeeper hbase_master region_server }
+#set.hadoop.daemons_in_order = %w{ name_node data_node secondary_name_node job_tracker task_tracker zookeeper hbase_master region_server }
+# For HA setup:
+set.hadoop.daemons_in_order = %w{ name_node_master data_node secondary_name_node job_tracker task_tracker zookeeper hbase_master region_server }
+
+set.hadoop.daemons.name_node_master.start_cmd = "#{hadoop_precmd} start namenode; jps|grep NameNode|cut -d' ' -f1  > #{node[:hadoop][:userhome]}/namenode.pid"
+set.hadoop.daemons.name_node_master.stop_cmd = "#{hadoop_precmd} stop namenode"
+set.hadoop.daemons.name_node_master.clean_cmd = "/bin/bash #{node[:hadoop][:userhome]}/namenode-clean.sh"
 
 set.hadoop.daemons.name_node.start_cmd = "#{hadoop_precmd} start namenode; jps|grep NameNode|cut -d' ' -f1  > #{node[:hadoop][:userhome]}/namenode.pid"
 set.hadoop.daemons.name_node.stop_cmd = "#{hadoop_precmd} stop namenode"

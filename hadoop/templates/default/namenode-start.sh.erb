@@ -1,0 +1,4 @@
+#!/bin/bash
+ssh ras-hadoop5.vm.griddynamics.net "/bin/bash /hadoop/namenode-stop.sh"
+cd /hadoop/core/bin; export JAVA_HOME=/usr/java/jdk1.6.0_16; export HADOOP_HOME=/hadoop/core; sleep 1; ./hadoop-daemon.sh --config /hadoop/core/conf start namenode; jps|grep NameNode|cut -d' ' -f1  > /hadoop/namenode.pid
+

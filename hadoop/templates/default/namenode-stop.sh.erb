@@ -1,0 +1,4 @@
+#!/bin/bash
+kill `jps|grep NameNode|cut -d' ' -f1`
+sleep 1
+kill -9 `jps|grep NameNode|cut -d' ' -f1`

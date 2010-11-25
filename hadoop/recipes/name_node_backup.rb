@@ -1,6 +1,7 @@
-include_recipe "hadoop::name_node"
 include_recipe "keepalived"
+include_recipe "glusterfs"
 include_recipe "hadoop::keepalived"
+include_recipe "hadoop::name_node"
 
 service "keepalived" do
   action :nothing

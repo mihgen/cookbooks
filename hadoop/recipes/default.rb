@@ -48,12 +48,10 @@ link node[:hadoop][:core_dir] do
   to "#{node[:hadoop][:userhome]}/#{unpack_dir}"
 end
 
-[ node[:hadoop][:hdfs_name], node[:hadoop][:hdfs_data] ].each do |dir|
-  directory "#{dir}" do
-    owner node[:hadoop][:user]
-    group node[:hadoop][:user]
-    recursive true
-  end
+directory node[:hadoop][:hdfs_data] do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  recursive true
 end
 
 if node[:hadoop][:ha].any?
