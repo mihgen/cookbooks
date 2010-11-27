@@ -63,13 +63,17 @@ end
 
 # USING FQDN FROM ATTRS OR SEARCH TO FILL IN fqdn[:daemon]
 fqdn = {}
+fqdn_search = {}
+ha_master_fqdn = search(:node, %Q{run_list:"recipe[hadoop::ha_master]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+log "Found HA Master host at #{ha_master_fqdn}"
 (node[:hadoop][:hadoop_daemons] + node[:hadoop][:hbase_daemons]).each do |daemon|
+  fqdn_search[daemon.to_sym] = search(:node, %Q{run_list:"recipe[hadoop::#{daemon}]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
   if node[:hadoop][daemon.to_sym][:fqdn].to_s.any? 
     fqdn[daemon.to_sym] = [ *node[:hadoop][daemon.to_sym][:fqdn] ]
   else
-    fqdn[daemon.to_sym] = search(:node, %Q{run_list:"recipe[hadoop::#{daemon}]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+    fqdn[daemon.to_sym] = fqdn_search[daemon.to_sym]
   end
-  log "Set #{daemon} service FQDN to #{fqdn[daemon.to_sym].join(',')}"
+  log "Found #{daemon} on: #{fqdn_search[daemon.to_sym].join(',')}. Set #{daemon} service FQDN to #{fqdn[daemon.to_sym].join(',')}"
 end
 
 template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
@@ -148,9 +152,6 @@ template "#{node[:hadoop][:scripts_dir]}/all.sh" do
 end
 
 node[:hadoop][:hadoop_daemons].each do |daemon|
-  hosts = search(:node, %Q{run_list:"recipe[hadoop::#{daemon}]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
-  log "Found #{daemon} hosts: #{hosts.join(',')}"
-
   template "#{node[:hadoop][:scripts_dir]}/#{daemon}.sh" do
     source "scripts.sh.erb"
     owner node[:hadoop][:user]
@@ -159,15 +160,12 @@ node[:hadoop][:hadoop_daemons].each do |daemon|
     variables({
       :hadoop_or_hbase => "hadoop",
       :service => node[:hadoop][daemon.to_sym][:name],
-      :hosts => hosts 
+      :hosts => fqdn_search[daemon.to_sym]
     })
   end
 end
 
 node[:hadoop][:hbase_daemons].each do |daemon|
-  hosts = search(:node, %Q{run_list:"recipe[hadoop::#{daemon}]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
-  log "Found #{daemon} hosts: #{hosts.join(',')}"
-
   template "#{node[:hadoop][:scripts_dir]}/#{daemon}.sh" do
     source "scripts.sh.erb"
     owner node[:hadoop][:user]
@@ -176,7 +174,20 @@ node[:hadoop][:hbase_daemons].each do |daemon|
     variables({
       :hadoop_or_hbase => "hbase",
       :service => node[:hadoop][daemon.to_sym][:name],
-      :hosts => hosts 
+      :hosts => fqdn_search[daemon.to_sym]
     })
   end
+end
+  
+# Special template for name_node. It needs to be started only on HA Master host.
+template "#{node[:hadoop][:scripts_dir]}/name_node.sh" do
+  source "scripts.sh.erb"
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0755
+  variables({
+    :hadoop_or_hbase => "hadoop",
+    :service => node[:hadoop][:name_node][:name],
+    :hosts => ha_master_fqdn
+  })
 end

@@ -3,7 +3,7 @@
 hadoop Mash.new
 hbase Mash.new
 
-set.hadoop.env_id = "ras-qa"
+set.hadoop.env_id = "test"
 
 set.hadoop.user = "hadoop"
 set.hadoop.userhome = "/hadoop"
@@ -44,7 +44,7 @@ set.hadoop.hadoop_daemons = %w{ name_node data_node secondary_name_node job_trac
 set.hadoop.hbase_daemons = %w{ zookeeper hbase_master region_server }
 
 set.hadoop.name_node.name = "namenode"
-#set.hadoop.name_node.fqdn = "ras-namenode2.vm.griddynamics.net"
+set.hadoop.name_node.fqdn = "ras-namenode2.vm.griddynamics.net"
 
 set.hadoop.name_node_master.name = "namenode"
 set.hadoop.data_node.name = "datanode"
