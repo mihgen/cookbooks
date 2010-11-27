@@ -42,10 +42,31 @@ template "#{node[:hbase][:conf_dir]}/hbase-env.sh" do
   source "hbase-env.sh.erb"
 end
 
-if node[:hadoop][:ha].any?
+unless node[:hadoop][:ha].nil?
   name_node_fqdn = node[:hadoop][:ha][:fqdn]
 else
-  name_node_fqdn = search(:node, %q{run_list:"recipe[hadoop::name_node]"}).map{ |e| e["fqdn"] }
+  name_node_fqdn = search(:node, %Q{run_list:"recipe[hadoop::name_node]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+end
+log "Set NameNode host to: #{name_node_fqdn}"
+
+directory node[:hadoop][:zookeeper][:data_dir] do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  recursive true
+end
+
+zookeeper_hosts = search(:node, %Q{run_list:"recipe[hadoop::zookeeper]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+log "Found zookeeper hosts: #{zookeeper_hosts.join(',')}"
+zookeeper_id = zookeeper_hosts.index(node[:fqdn])
+
+template "#{node[:hadoop][:zookeeper][:data_dir]}/myid" do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0644
+  source "myid.erb"
+  variables({
+    :zookeeper_id => zookeeper_id
+  })
 end
 
 template "#{node[:hbase][:conf_dir]}/hbase-site.xml" do
@@ -54,8 +75,7 @@ template "#{node[:hbase][:conf_dir]}/hbase-site.xml" do
   group node[:hbase][:user]
   mode 0644
   variables({
-    :zk_hosts => search(:node, %q{run_list:"recipe[hadoop::zookeeper]"}).map{ |e| e["fqdn"] },
+    :zk_hosts => zookeeper_hosts,
     :namenode_host => name_node_fqdn
   })
 end
-

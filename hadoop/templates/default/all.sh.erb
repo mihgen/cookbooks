@@ -1,0 +1,6 @@
+#!/bin/bash
+for daemon in <%= @node[:hadoop][:daemons_in_order].join(' ') %>; do
+  file="<%= @node[:hadoop][:scripts_dir] %>/$daemon.sh"
+  [ -f $file ] && { echo "--------- $daemon $1 ---------"; /bin/bash $file $1; } 
+  echo
+done

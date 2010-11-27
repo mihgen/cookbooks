@@ -1,0 +1,7 @@
+#!/bin/bash
+
+daemon_cmd="<%= @hadoop_or_hbase == "hadoop" ? "#{@node[:hadoop][:core_dir]}/bin/hadoop-daemon.sh --config #{@node[:hadoop][:conf_dir]}" : "#{@node[:hbase][:core_dir]}/bin/hbase-daemon.sh --config #{@node[:hbase][:conf_dir]}" %>"
+
+for h in <%= @hosts.join(' ') %>; do
+  ssh $h ". <%= @node[:hadoop][:scripts_dir] %>/functions.sh; $daemon_cmd $1 <%= @service %>"
+done

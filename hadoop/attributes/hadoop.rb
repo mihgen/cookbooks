@@ -3,10 +3,13 @@
 hadoop Mash.new
 hbase Mash.new
 
+set.hadoop.env_id = "ras-qa"
+
 set.hadoop.user = "hadoop"
 set.hadoop.userhome = "/hadoop"
 set.hadoop.download_url = "http://www.sai.msu.su/apache/hadoop/core/hadoop-0.20.2/hadoop-0.20.2.tar.gz"
 set.hadoop.core_dir = "#{node[:hadoop][:userhome]}/core"
+set.hadoop.scripts_dir = "#{node[:hadoop][:userhome]}/scripts"
 set.hadoop.conf_dir = "#{node[:hadoop][:core_dir]}/conf"
 set.hadoop.hdfs_name_default = "#{node[:hadoop][:userhome]}/hdfs/name"   # For HA another dir is used, see name_node recipe.
 set.hadoop.hdfs_data = "#{node[:hadoop][:userhome]}/hdfs/data"
@@ -47,35 +50,13 @@ hbase_precmd = "#{hbase_setvar}; ./hbase-daemon.sh --config #{node[:hbase][:conf
 #set.hadoop.daemons_in_order = %w{ name_node data_node secondary_name_node job_tracker task_tracker zookeeper hbase_master region_server }
 # For HA setup:
 set.hadoop.daemons_in_order = %w{ name_node_master data_node secondary_name_node job_tracker task_tracker zookeeper hbase_master region_server }
+set.hadoop.daemons.name_node = "namenode"
+set.hadoop.daemons.name_node_master = "namenode"
+set.hadoop.daemons.data_node = "datanode"
+set.hadoop.daemons.secondary_name_node = "secondarynamenode"
+set.hadoop.daemons.job_tracker = "jobtracker"
+set.hadoop.daemons.task_tracker = "tasktracker"
+set.hadoop.daemons.zookeeper = "zookeeper"
+set.hadoop.daemons.hbase_master = "master"
+set.hadoop.daemons.region_server = "region_server"
 
-set.hadoop.daemons.name_node_master.start_cmd = "#{hadoop_precmd} start namenode; jps|grep NameNode|cut -d' ' -f1  > #{node[:hadoop][:userhome]}/namenode.pid"
-set.hadoop.daemons.name_node_master.stop_cmd = "#{hadoop_precmd} stop namenode"
-set.hadoop.daemons.name_node_master.clean_cmd = "/bin/bash #{node[:hadoop][:userhome]}/namenode-clean.sh"
-
-set.hadoop.daemons.name_node.start_cmd = "#{hadoop_precmd} start namenode; jps|grep NameNode|cut -d' ' -f1  > #{node[:hadoop][:userhome]}/namenode.pid"
-set.hadoop.daemons.name_node.stop_cmd = "#{hadoop_precmd} stop namenode"
-set.hadoop.daemons.name_node.clean_cmd = "#{hadoop_setvar}; rm -rf #{node[:hadoop][:hdfs_name]}/*; echo Y | #{node[:hadoop][:core_dir]}/bin/hadoop namenode -format"
-
-set.hadoop.daemons.data_node.start_cmd = "#{hadoop_precmd} start datanode"
-set.hadoop.daemons.data_node.stop_cmd = "#{hadoop_precmd} stop datanode"
-set.hadoop.daemons.data_node.clean_cmd = "#{hadoop_setvar}; rm -rf #{node[:hadoop][:hdfs_data]}/*"
-
-set.hadoop.daemons.secondary_name_node.start_cmd = "#{hadoop_precmd} start secondarynamenode"
-set.hadoop.daemons.secondary_name_node.stop_cmd = "#{hadoop_precmd} stop secondarynamenode"
-
-set.hadoop.daemons.job_tracker.start_cmd = "#{hadoop_precmd} start jobtracker"
-set.hadoop.daemons.job_tracker.stop_cmd = "#{hadoop_precmd} stop jobtracker"
-
-set.hadoop.daemons.task_tracker.start_cmd = "#{hadoop_precmd} start tasktracker"
-set.hadoop.daemons.task_tracker.stop_cmd = "#{hadoop_precmd} stop tasktracker"
-
-set.hadoop.daemons.zookeeper.start_cmd = "#{hbase_precmd} start zookeeper"
-set.hadoop.daemons.zookeeper.stop_cmd = "#{hbase_precmd} stop zookeeper"
-
-set.hadoop.daemons.hbase_master.start_cmd = "#{hbase_precmd} start master"
-set.hadoop.daemons.hbase_master.stop_cmd = "#{hbase_precmd} stop master"
-
-set.hadoop.daemons.region_server.start_cmd = "#{hbase_precmd} start regionserver"
-set.hadoop.daemons.region_server.stop_cmd = "#{hbase_precmd} stop regionserver"
-
-#ntp[:servers] = ["0.us.pool.ntp.org", "1.us.pool.ntp.org"] unless ntp.has_key?(:servers)

@@ -48,17 +48,20 @@ link node[:hadoop][:core_dir] do
   to "#{node[:hadoop][:userhome]}/#{unpack_dir}"
 end
 
-directory node[:hadoop][:hdfs_data] do
-  owner node[:hadoop][:user]
-  group node[:hadoop][:user]
-  recursive true
+[ node[:hadoop][:hdfs_data], node[:hadoop][:scripts_dir] ].each do |dir|
+  directory dir do
+    owner node[:hadoop][:user]
+    group node[:hadoop][:user]
+    recursive true
+  end
 end
 
-if node[:hadoop][:ha].any?
+unless node[:hadoop][:ha].nil?
   name_node_fqdn = node[:hadoop][:ha][:fqdn]
 else
-  name_node_fqdn = search(:node, %q{run_list:"recipe[hadoop::name_node]"}).map{ |e| e["fqdn"] }
+  name_node_fqdn = search(:node, %Q{run_list:"recipe[hadoop::name_node]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
 end
+log "Set NameNode to: #{name_node_fqdn} from recipe default."
 
 template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
   owner node[:hadoop][:user]
@@ -70,13 +73,16 @@ template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
   })
 end
 
+job_tracker_host = search(:node, %Q{run_list:"recipe[hadoop::job_tracker]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+log "Found job tracker at #{job_tracker_host}"
+
 template "#{node[:hadoop][:core_dir]}/conf/mapred-site.xml" do
   owner node[:hadoop][:user]
   group node[:hadoop][:user]
   mode 0644
   source "mapred-site.xml.erb"
   variables({
-    :master_host => search(:node, %q{run_list:"recipe[hadoop::job_tracker]"}).map{ |e| e["fqdn"] }
+    :master_host => job_tracker_host
   })
 end
 
@@ -107,4 +113,52 @@ template "#{node[:hadoop][:core_dir]}/conf/masters" do
   variables({
     :hosts => []  #search(:node, %q{run_list:"recipe[hadoop::master]"}).map{ |e| e["fqdn"] }
   })
+end
+
+template "#{node[:hadoop][:scripts_dir]}/functions.sh" do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0644
+  source "functions.sh.erb"
+end
+
+template "#{node[:hadoop][:scripts_dir]}/all.sh" do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0755
+  source "all.sh.erb"
+end
+
+%w{ name_node data_node secondary_name_node job_tracker task_tracker }.each do |daemon|
+  hosts = search(:node, %Q{run_list:"recipe[hadoop::#{daemon}]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+  log "Found #{daemon} hosts: #{hosts.join(',')}"
+
+  template "#{node[:hadoop][:scripts_dir]}/#{daemon}.sh" do
+    source "scripts.sh.erb"
+    owner node[:hadoop][:user]
+    group node[:hadoop][:user]
+    mode 0755
+    variables({
+      :hadoop_or_hbase => "hadoop",
+      :service => node[:hadoop][:daemons][daemon.to_sym],
+      :hosts => hosts 
+    })
+  end
+end
+
+%w{ zookeeper hbase_master region_server }.each do |daemon|
+  hosts = search(:node, %Q{run_list:"recipe[hadoop::#{daemon}]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+  log "Found #{daemon} hosts: #{hosts.join(',')}"
+
+  template "#{node[:hadoop][:scripts_dir]}/#{daemon}.sh" do
+    source "scripts.sh.erb"
+    owner node[:hadoop][:user]
+    group node[:hadoop][:user]
+    mode 0755
+    variables({
+      :hadoop_or_hbase => "hadoop",
+      :service => node[:hadoop][:daemons][daemon.to_sym],
+      :hosts => hosts 
+    })
+  end
 end

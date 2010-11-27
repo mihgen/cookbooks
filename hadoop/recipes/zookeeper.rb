@@ -1,20 +1,16 @@
 include_recipe "hadoop::hbase"
 
-directory node[:hadoop][:zookeeper][:data_dir] do
-  owner node[:hadoop][:user]
-  group node[:hadoop][:user]
-  recursive true
-end
+hosts = search(:node, %Q{run_list:"recipe[hadoop::zookeeper]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+log "Found Zookeeper hosts: #{hosts.join(',')}"
 
-zookeeper_hosts = search(:node, %q{run_list:"recipe[hadoop::zookeeper]"}).map{ |e| e["fqdn"] }
-zookeeper_id = zookeeper_hosts.index(node[:fqdn])
-
-template "#{node[:hadoop][:zookeeper][:data_dir]}/myid" do
-  owner node[:hadoop][:user]
-  group node[:hadoop][:user]
-  mode 0644
-  source "myid.erb"
+template "#{node[:hadoop][:scripts_dir]}/zookeeper.sh" do
+  source "scripts.sh.erb"
+  owner node[:hbase][:user]
+  group node[:hbase][:user]
+  mode 0755
   variables({
-    :zookeeper_id => zookeeper_id
+    :hadoop_or_hbase => "hbase",
+    :service => "zookeeper",
+    :hosts => hosts 
   })
 end
