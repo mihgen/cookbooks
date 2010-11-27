@@ -11,7 +11,7 @@ global_defs {
 }
 
 vrrp_script chk_namenode {
-        script "kill -0 `cat <%= @node[:hadoop][:userhome] %>/namenode.pid`"
+        script "kill -0 `cat /tmp/hadoop-hadoop-namenode.pid`"
         interval 2
         weight <%= @weights[:namenode_weight] %>
 }

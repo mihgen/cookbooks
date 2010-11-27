@@ -21,34 +21,38 @@ end
   end
 end
 
-filename = node[:hadoop][:download_url].scan(/\/([^\/]+)$/).to_s
+[ node[:hadoop][:download_url], node[:hbase][:download_url] ].each do |url|
+  filename = url.scan(/\/([^\/]+)$/).to_s
+  log "Downloading #{filename}..."
 
-remote_file "#{node[:hadoop][:userhome]}/#{filename}" do
-  owner node[:hadoop][:user]
-  backup false
-  source "#{node[:hadoop][:download_url]}"
-  action :create
-  not_if do File.exists?("#{node[:hadoop][:userhome]}/#{filename}") end
+  remote_file "#{node[:hadoop][:userhome]}/#{filename}" do
+    owner node[:hadoop][:user]
+    backup false
+    source "#{node[:hadoop][:download_url]}"
+    action :create
+    not_if do File.exists?("#{node[:hadoop][:userhome]}/#{filename}") end
+  end
+
+  unpack_dir = filename.scan(/(\S+)\.tar\.gz/).to_s
+  component = unpack_dir.scan(/(\w+)-.*/).to_s
+
+  script "Install #{component}" do
+    interpreter "bash"
+    user "#{node[:hadoop][:user]}"
+    group "#{node[:hadoop][:user]}"
+    cwd "#{node[:hadoop][:userhome]}"
+    code <<-EOH 
+    tar -kxzf #{filename}
+    EOH
+    not_if do File.exists?("#{node[:hadoop][:userhome]}/#{unpack_dir}/conf") end
+  end
+
+  link node[component.to_sym][:core_dir] do
+    to "#{node[:hadoop][:userhome]}/#{unpack_dir}"
+  end
 end
 
-unpack_dir = filename.scan(/(\S+)\.tar\.gz/).to_s
-
-script "install_hadoop" do
-  interpreter "bash"
-  user "#{node[:hadoop][:user]}"
-  group "#{node[:hadoop][:user]}"
-  cwd "#{node[:hadoop][:userhome]}"
-  code <<-EOH 
-  tar -kxzf #{filename}
-  EOH
-  not_if do File.exists?("#{node[:hadoop][:userhome]}/#{unpack_dir}/conf") end
-end
-
-link node[:hadoop][:core_dir] do
-  to "#{node[:hadoop][:userhome]}/#{unpack_dir}"
-end
-
-[ node[:hadoop][:hdfs_data], node[:hadoop][:scripts_dir] ].each do |dir|
+[ node[:hadoop][:hdfs_data_dir], node[:hadoop][:hdfs_name_dir], node[:hadoop][:scripts_dir], node[:hadoop][:zookeeper][:data_dir] ].each do |dir|
   directory dir do
     owner node[:hadoop][:user]
     group node[:hadoop][:user]
@@ -56,12 +60,17 @@ end
   end
 end
 
-unless node[:hadoop][:ha].nil?
-  name_node_fqdn = node[:hadoop][:ha][:fqdn]
-else
-  name_node_fqdn = search(:node, %Q{run_list:"recipe[hadoop::name_node]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+
+# USING FQDN FROM ATTRS OR SEARCH TO FILL IN fqdn[:daemon]
+fqdn = {}
+(node[:hadoop][:hadoop_daemons] + node[:hadoop][:hbase_daemons]).each do |daemon|
+  if node[:hadoop][daemon.to_sym][:fqdn].to_s.any? 
+    fqdn[daemon.to_sym] = [ *node[:hadoop][daemon.to_sym][:fqdn] ]
+  else
+    fqdn[daemon.to_sym] = search(:node, %Q{run_list:"recipe[hadoop::#{daemon}]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
+  end
+  log "Set #{daemon} service FQDN to #{fqdn[daemon.to_sym].join(',')}"
 end
-log "Set NameNode to: #{name_node_fqdn} from recipe default."
 
 template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
   owner node[:hadoop][:user]
@@ -69,12 +78,9 @@ template "#{node[:hadoop][:core_dir]}/conf/core-site.xml" do
   mode 0644
   source "core-site.xml.erb"
   variables({
-    :master_host => name_node_fqdn
+    :master_host => fqdn[:name_node]
   })
 end
-
-job_tracker_host = search(:node, %Q{run_list:"recipe[hadoop::job_tracker]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
-log "Found job tracker at #{job_tracker_host}"
 
 template "#{node[:hadoop][:core_dir]}/conf/mapred-site.xml" do
   owner node[:hadoop][:user]
@@ -82,7 +88,7 @@ template "#{node[:hadoop][:core_dir]}/conf/mapred-site.xml" do
   mode 0644
   source "mapred-site.xml.erb"
   variables({
-    :master_host => job_tracker_host
+    :master_host => fqdn[:job_tracker]
   })
 end
 
@@ -95,23 +101,31 @@ end
   end
 end
 
-template "#{node[:hadoop][:core_dir]}/conf/slaves" do
+template "#{node[:hbase][:conf_dir]}/hbase-env.sh" do
   owner node[:hadoop][:user]
   group node[:hadoop][:user]
   mode 0644
-  source "slaves.erb"
+  source "hbase-env.sh.erb"
+end
+
+template "#{node[:hadoop][:zookeeper][:data_dir]}/myid" do
+  owner node[:hadoop][:user]
+  group node[:hadoop][:user]
+  mode 0644
+  source "myid.erb"
   variables({
-    :hosts => []  #search(:node, %q{run_list:"recipe[hadoop::slave]"}).map{ |e| e["fqdn"] }
+    :zookeeper_id => fqdn[:zookeeper].index(node[:fqdn])
   })
 end
 
-template "#{node[:hadoop][:core_dir]}/conf/masters" do
+template "#{node[:hbase][:conf_dir]}/hbase-site.xml" do
+  source "hbase-site.xml.erb"
   owner node[:hadoop][:user]
   group node[:hadoop][:user]
   mode 0644
-  source "masters.erb"
   variables({
-    :hosts => []  #search(:node, %q{run_list:"recipe[hadoop::master]"}).map{ |e| e["fqdn"] }
+    :zk_hosts => fqdn[:zookeeper],
+    :namenode_host => fqdn[:name_node]
   })
 end
 
@@ -127,9 +141,13 @@ template "#{node[:hadoop][:scripts_dir]}/all.sh" do
   group node[:hadoop][:user]
   mode 0755
   source "all.sh.erb"
+  variables({
+    :daemons => node[:hadoop][:hadoop_daemons] + node[:hadoop][:hbase_daemons],
+    :scripts_dir => node[:hadoop][:scripts_dir]
+  })
 end
 
-%w{ name_node data_node secondary_name_node job_tracker task_tracker }.each do |daemon|
+node[:hadoop][:hadoop_daemons].each do |daemon|
   hosts = search(:node, %Q{run_list:"recipe[hadoop::#{daemon}]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
   log "Found #{daemon} hosts: #{hosts.join(',')}"
 
@@ -140,13 +158,13 @@ end
     mode 0755
     variables({
       :hadoop_or_hbase => "hadoop",
-      :service => node[:hadoop][:daemons][daemon.to_sym],
+      :service => node[:hadoop][daemon.to_sym][:name],
       :hosts => hosts 
     })
   end
 end
 
-%w{ zookeeper hbase_master region_server }.each do |daemon|
+node[:hadoop][:hbase_daemons].each do |daemon|
   hosts = search(:node, %Q{run_list:"recipe[hadoop::#{daemon}]" AND env_id:#{node[:hadoop][:env_id]}}).map{ |e| e["fqdn"] }
   log "Found #{daemon} hosts: #{hosts.join(',')}"
 
@@ -156,8 +174,8 @@ end
     group node[:hadoop][:user]
     mode 0755
     variables({
-      :hadoop_or_hbase => "hadoop",
-      :service => node[:hadoop][:daemons][daemon.to_sym],
+      :hadoop_or_hbase => "hbase",
+      :service => node[:hadoop][daemon.to_sym][:name],
       :hosts => hosts 
     })
   end
