@@ -147,7 +147,8 @@ template "#{node[:hadoop][:scripts_dir]}/all.sh" do
   source "all.sh.erb"
   variables({
     :daemons => node[:hadoop][:hadoop_daemons] + node[:hadoop][:hbase_daemons],
-    :scripts_dir => node[:hadoop][:scripts_dir]
+    :scripts_dir => node[:hadoop][:scripts_dir],
+    :hosts => fqdn_search.values.flatten.uniq
   })
 end
 

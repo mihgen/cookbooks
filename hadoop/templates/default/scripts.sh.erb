@@ -1,7 +1,33 @@
 #!/bin/bash
 
+<% raise "HDFS data dir is not defined!" if @node[:hadoop][:hdfs_data_dir].nil? or @node[:hadoop][:hdfs_data_dir].empty? %>
+<% raise "HDFS name dir is not defined!" if @node[:hadoop][:hdfs_name_dir].nil? or @node[:hadoop][:hdfs_name_dir].empty? %>
+
 daemon_cmd="<%= @hadoop_or_hbase == "hadoop" ? "#{@node[:hadoop][:core_dir]}/bin/hadoop-daemon.sh --config #{@node[:hadoop][:conf_dir]}" : "#{@node[:hbase][:core_dir]}/bin/hbase-daemon.sh --config #{@node[:hbase][:conf_dir]}" %>"
+
+case "$1" in
+"start" | "stop")
 
 for h in <%= @hosts.join(' ') %>; do
   ssh $h ". <%= @node[:hadoop][:scripts_dir] %>/functions.sh; $daemon_cmd $1 <%= @service %>"
 done
+;;
+
+"clean")
+<% if @service == "namenode" or @service == "datanode" %>
+for h in <%= @hosts.join(' ') %>; do
+  ssh $h ". <%= @node[:hadoop][:scripts_dir] %>/functions.sh; $daemon_cmd stop <%= @service %>"
+<% if @service == "namenode" %>
+  ssh $h ". <%= @node[:hadoop][:scripts_dir] %>/functions.sh; rm -rf <%= @node[:hadoop][:hdfs_name_dir] %>/*; echo Y | <%= @node[:hadoop][:core_dir] %>/bin/hadoop namenode -format"
+<% else %>
+  ssh $h "rm -rf <%= @node[:hadoop][:hdfs_data_dir] %>/*"
+<% end %>
+done
+<% end %>
+;;
+
+*)
+echo "Usage: $0 {start|stop|clean}."
+exit 1
+;;
+esac

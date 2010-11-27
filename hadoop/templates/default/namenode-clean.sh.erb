@@ -1,2 +1,0 @@
-#!/bin/bash
-cd /hadoop/core/bin; export JAVA_HOME=/usr/java/jdk1.6.0_16; export HADOOP_HOME=/hadoop/core; rm -rf <%= @hdfs_name_dir %>/*; rm -rf <%= @hdfs_data_dir %>/*; echo Y | /hadoop/core/bin/hadoop namenode -format

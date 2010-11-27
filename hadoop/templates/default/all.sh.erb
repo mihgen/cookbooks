@@ -1,7 +1,31 @@
 #!/bin/bash
-for daemon in <%= @daemons.join(' ') %>; do
-  file="<%= @scripts_dir %>/$daemon.sh"
-  [ -f $file ] && { echo "--------- $daemon $1 ---------"; /bin/bash $file $1; } 
-  sleep 1
-  echo
-done
+
+case "$1" in
+"start")
+  for daemon in <%= @daemons.join(' ') %>; do
+    file="<%= @scripts_dir %>/$daemon.sh"
+    [ -f $file ] && { echo "--------- $daemon $1 ---------"; /bin/bash $file $1; } 
+    sleep 1
+    echo
+  done
+;;
+
+"stop" | "clean")
+  for daemon in <%= @daemons.reverse.join(' ') %>; do
+    file="<%= @scripts_dir %>/$daemon.sh"
+    [ -f $file ] && { echo "--------- $daemon $1 ---------"; /bin/bash $file $1; } 
+    echo
+  done
+  if [[ "$1" == "stop" ]]; then
+    for host in <%= @hosts.join(' ') %>; do
+      echo "Killing hadoop processes on $host..."
+      ssh $host "pkill -9 -U <%= @node[:hadoop][:user] %>"
+    done
+  fi
+;;
+  
+*)
+echo "Usage: $0 {start|stop|clean}."
+exit 1
+;;
+esac
