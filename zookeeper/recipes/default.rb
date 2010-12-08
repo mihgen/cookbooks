@@ -77,12 +77,12 @@ template "/etc/zookeeper/log4j.properties" do
   mode 0644
 end
 
-if node.role?("zookeeper")
+if node.recipe?("zookeeper")
   zk_servers = [node]
 else
   zk_servers = []
 end
-zk_servers += search(:node, "role:zookeeper AND zookeeper_cluster_name:#{node[:zookeeper][:cluster_name]} NOT name:#{node.name}") # don't include this one, since it's already in the list
+zk_servers += search(:node, "recipe:zookeeper AND zookeeper_cluster_name:#{node[:zookeeper][:cluster_name]} NOT name:#{node.name}") # don't include this one, since it's already in the list
 
 zk_servers.sort! { |a, b| a.name <=> b.name }
 
