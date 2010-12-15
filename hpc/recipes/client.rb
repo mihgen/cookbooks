@@ -16,6 +16,10 @@ server = search(:node, %q{run_list:"recipe[hpc::server]"})
 server_ip = server.map{ |e| e["ipaddress"] }
 server_fqdn = server.map{ |e| e["fqdn"] }
 
+service "rpcbind" do
+  action [ :enable, :start ]
+end
+
 mount "/home" do
   device "#{server_ip}:/home"
   fstype "nfs"
