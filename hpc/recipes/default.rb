@@ -1,6 +1,7 @@
 include_recipe "ssh_known_hosts"
+include_recipe "java6"
 
-remote_file "/etc/yum.repos.d/oscar-rhel5-x86_64.repo" do
+cookbook_file "/etc/yum.repos.d/oscar-rhel5-x86_64.repo" do
   source "oscar-rhel5-x86_64.repo"
   mode 0644
 end
@@ -31,7 +32,12 @@ end
   sysstat
   strace tcpdump
   tcl tk
-}.each { |pkg| package pkg } 
+}.each do |pkg| 
+  package pkg do
+    action :install
+    options "--disablerepo epel"
+  end
+end 
 
 yum_package "glibc-devel" do
   arch "i386"
