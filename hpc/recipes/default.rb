@@ -6,10 +6,6 @@ cookbook_file "/etc/yum.repos.d/oscar-rhel5-x86_64.repo" do
   mode 0644
 end
 
-package "epel-release" do
-  action :remove
-end
-
 %w{
   autoconf automake bison byacc cscope ctags
   cvs diffstat doxygen elfutils flex indent intltool libtool ltrace oprofile oprofile-gui 
@@ -35,7 +31,6 @@ end
 }.each do |pkg| 
   package pkg do
     action :install
-    options "--disablerepo epel"
   end
 end 
 
@@ -52,7 +47,7 @@ end
 storage_url = "http://s3.cluster.sgu.ru/packages"
 directory "/root/packages" 
 
-%w{ Python-2.6.5.tar.bz2 setuptools-0.6c11.tar.gz gnuplot-py-1.8.tar.gz dmd.2.049.zip }.each do |pkg|
+%w{ gnuplot-py-1.8.tar.gz dmd.2.049.zip }.each do |pkg|
   remote_file "/root/packages/#{pkg}" do
     source "#{storage_url}/#{pkg}"
     not_if { ::File.exists?("/root/packages/#{pkg}") }
@@ -60,52 +55,26 @@ directory "/root/packages"
   end
 end
 
-bash "Installing Python 2.6.5" do
-  cwd "/root/packages"
-  code <<-EOH
-  tar xf Python-2.6.5.tar.bz2
-  cd Python-2.6.5
-  ./configure
-  make
-  make altinstall
-  EOH
-  not_if do
-    ::File.exists?("/usr/local/bin/python2.6") 
-  end
-end
-
-%w{ setuptools-0.6c11.tar.gz }.each do |pkg|
-  bash "Install #{pkg} for Python 2.6.5" do
-    cwd "/root/packages"
-    code <<-EOH
-    tar xzf #{pkg}
-    cd #{pkg.scan(/(\S+)\.tar\.gz/)}
-    /usr/local/bin/python2.6 ./setup.py install
-    EOH
-    not_if do
-      ::Dir["/usr/local/lib/python2.6/site-packages/#{pkg.scan(/(\w+).*/)}*"].any?
-    end
-  end
-end
-
 # Issue with checking if package already installed: http://tickets.opscode.com/browse/CHEF-1889
-%w{ numpy scipy }.each do |pkg|
-  easy_install_package pkg do
-    easy_install_binary "/usr/local/bin/easy_install-2.6"
-  end
+easy_install_package "numpy" do
+  version "1.5.1"
+end
+
+easy_install_package "scipy" do
+  version "0.8.0"
 end
 
 # gnuplot needs numpy installed
 %w{ gnuplot-py-1.8.tar.gz }.each do |pkg|
-  bash "Install #{pkg} for Python 2.6.5" do
+  bash "Install #{pkg}" do
     cwd "/root/packages"
     code <<-EOH
     tar xzf #{pkg}
     cd #{pkg.scan(/(\S+)\.tar\.gz/)}
-    /usr/local/bin/python2.6 ./setup.py install
+    python ./setup.py install
     EOH
     not_if do
-      ::Dir["/usr/local/lib/python2.6/site-packages/#{pkg.scan(/(\w+).*/)}*"].any?
+      ::Dir["/usr/lib/python2.6/site-packages/#{pkg.scan(/(\w+).*/)}*"].any?
     end
   end
 end
