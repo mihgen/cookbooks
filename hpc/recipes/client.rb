@@ -8,6 +8,10 @@ torque-client
 opkg-maui-client
 }.each { |pkg| package pkg }
 
+package "torque-mom" do
+  version "2.1.10-8.fc12"
+end
+
 service "pbs_mom" do
   action [ :enable, :start ]
 end
@@ -15,10 +19,6 @@ end
 server = search(:node, %q{run_list:"recipe[hpc::server]"})
 server_ip = server.map{ |e| e["ipaddress"] }
 server_fqdn = server.map{ |e| e["fqdn"] }
-
-service "rpcbind" do
-  action [ :enable, :start ]
-end
 
 mount "/home" do
   device "#{server_ip}:/home"

@@ -44,6 +44,10 @@ yum_package "glibc-devel" do
   ignore_failure true
 end
 
+service "rpcbind" do
+  action [ :enable, :start ]
+end
+
 storage_url = "http://s3.cluster.sgu.ru/packages"
 directory "/root/packages" 
 
