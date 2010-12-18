@@ -44,8 +44,10 @@ yum_package "glibc-devel" do
   ignore_failure true
 end
 
-service "rpcbind" do
-  action [ :enable, :start ]
+%w{ rpcbind rpcidmapd }.each do |svc|
+  service svc do
+    action [ :enable, :start ]
+  end
 end
 
 %w{ gnuplot-py-1.8.tar.gz dmd.2.049.zip }.each do |pkg|

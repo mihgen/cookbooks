@@ -84,49 +84,49 @@ end
   end
 end
 
-#bash "install_something" do
-#user "root"
-  #cwd "/tmp"
-  #code <<-EOH
-    #/opt/pbs/bin/qmgr <<EOF
-##
-## Create queues and set their attributes.
-##
-##
-## Create and define queue workq
-##
-#create queue workq
-#set queue workq queue_type = Execution
-#set queue workq resources_max.cput = 240:00:00
-#set queue workq resources_max.ncpus = 32
-#set queue workq resources_max.nodect = 4
-#set queue workq resources_max.walltime = 300:00:00
-#set queue workq resources_min.cput = 00:00:01
-#set queue workq resources_default.cput = 300:00:00
-#set queue workq resources_default.ncpus = 1
-#set queue workq resources_default.nodect = 1
-#set queue workq resources_default.walltime = 10000:00:00
-#set queue workq resources_available.nodect = 4
-#set queue workq enabled = True
-#set queue workq started = True
-##
-## Set server attributes.
-##
-#set server scheduling = True
-#set server default_queue = workq
-#set server log_events = 64
-#set server mail_from = adm
-#set server query_other_jobs = True
-#set server resources_available.ncpus = 32
-#set server resources_available.nodect = 4
-#set server resources_available.nodes = 4
-#set server resources_max.ncpus = 32
-#set server resources_max.nodes = 4
-#set server scheduler_iteration = 60
-#set server node_check_rate = 150
-#set server tcp_timeout = 6
-#set server keep_completed = 300
-    #EOF
-  #EOH
-#end
+bash "Configure qmgr" do
+user "root"
+  cwd "/tmp"
+  code <<-EOH
+    qmgr <<EOF
+#
+# Create queues and set their attributes.
+#
+#
+# Create and define queue workq
+#
+create queue workq
+set queue workq queue_type = Execution
+set queue workq resources_max.cput = 240:00:00
+set queue workq resources_max.ncpus = 32
+set queue workq resources_max.nodect = 4
+set queue workq resources_max.walltime = 300:00:00
+set queue workq resources_min.cput = 00:00:01
+set queue workq resources_default.cput = 300:00:00
+set queue workq resources_default.ncpus = 1
+set queue workq resources_default.nodect = 1
+set queue workq resources_default.walltime = 10000:00:00
+set queue workq resources_available.nodect = 4
+set queue workq enabled = True
+set queue workq started = True
+#
+# Set server attributes.
+#
+set server scheduling = True
+set server default_queue = workq
+set server log_events = 64
+set server mail_from = adm
+set server query_other_jobs = True
+set server resources_available.ncpus = 32
+set server resources_available.nodect = 4
+set server resources_available.nodes = 4
+set server resources_max.ncpus = 32
+set server resources_max.nodes = 4
+set server scheduler_iteration = 60
+set server node_check_rate = 150
+set server tcp_timeout = 6
+set server keep_completed = 300
+    EOF
+  EOH
+end
 
