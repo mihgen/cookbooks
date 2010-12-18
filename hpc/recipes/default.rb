@@ -48,13 +48,10 @@ service "rpcbind" do
   action [ :enable, :start ]
 end
 
-storage_url = "http://s3.cluster.sgu.ru/packages"
-directory "/root/packages" 
-
 %w{ gnuplot-py-1.8.tar.gz dmd.2.049.zip }.each do |pkg|
-  remote_file "/root/packages/#{pkg}" do
-    source "#{storage_url}/#{pkg}"
-    not_if { ::File.exists?("/root/packages/#{pkg}") }
+  remote_file "#{node[:hpc][:dir_to_store]}/#{pkg}" do
+    source "#{node[:hpc][:storage_url]}/#{pkg}"
+    not_if { ::File.exists?("#{node[:hpc][:dir_to_store]}/#{pkg}") }
     action :create_if_missing
   end
 end
@@ -71,7 +68,7 @@ end
 # gnuplot needs numpy installed
 %w{ gnuplot-py-1.8.tar.gz }.each do |pkg|
   bash "Install #{pkg}" do
-    cwd "/root/packages"
+    cwd node[:hpc][:dir_to_store]
     code <<-EOH
     tar xzf #{pkg}
     cd #{pkg.scan(/(\S+)\.tar\.gz/)}
@@ -84,7 +81,7 @@ end
 end
 
 bash "Installing dmd compiler" do
-  cwd "/root/packages"
+  cwd node[:hpc][:dir_to_store]
   code <<-EOH
   /usr/bin/unzip dmd.2.049.zip -d /opt
   ln -sf /opt/dmd2/linux/bin/dmd.conf /etc/dmd.conf
