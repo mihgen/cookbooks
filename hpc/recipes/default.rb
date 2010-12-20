@@ -35,13 +35,12 @@ end
 end 
 
 yum_package "glibc-devel" do
-  arch "i386"
+  arch "i686"
   ignore_failure true
 end
 
-yum_package "glibc-devel" do
-  arch "i686"
-  ignore_failure true
+package "torque" do
+  version "2.1.10-8.fc12"
 end
 
 %w{ rpcbind rpcidmapd }.each do |svc|

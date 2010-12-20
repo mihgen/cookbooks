@@ -2,8 +2,6 @@ include_recipe "hpc"
 
 %w{
 opkg-switcher
-torque-client
-opkg-maui-client
 }.each { |pkg| package pkg }
 
 package "torque-mom" do

@@ -1,25 +1,36 @@
 include_recipe "hpc"
 
 %w{
-opkg-maui
-opkg-maui
 opkg-mpich
 opkg-mpich-server
 opkg-switcher
 opkg-switcher-server
-opkg-torque
-opkg-torque-server
 nfs-utils nfswatch
 }.each { |pkg| package pkg }
 
-package "libtorque-devel" do
-  version "2.1.10-8.fc12"
+%w{ torque-server torque-gui libtorque-devel torque-client }.each do |pkg|
+  package pkg do
+    version "2.1.10-8.fc12"
+  end
+end
+
+%w{ nfs pbs_server }.each do |svc|
+  service svc do
+    action [ :enable, :start ]
+  end
 end
 
 clients = search(:node, %q{run_list:"recipe[hpc::client]"})
 ser_fqdn = search(:node, %q{run_list:"recipe[hpc::server]"}).map{ |e| e["fqdn"] }
 cli_ips = clients.map{ |e| e["ipaddress"] }
 cli_fqdn = clients.map{ |e| e["fqdn"] }
+
+template "/var/torque/server_name" do
+  source "server_name.erb" 
+  mode 0644
+  variables :server_fqdn => ser_fqdn
+  notifies :restart, resources(:service => "pbs_server")
+end
 
 template "/opt/syncer" do
   source "syncer.erb" 
@@ -30,10 +41,6 @@ end
 template "/etc/exports" do
   source "exports.erb" 
   variables :clients => cli_ips
-end
-
-service "pbs_server" do
-  action :enable
 end
 
 template "/var/torque/server_priv/nodes" do
@@ -71,10 +78,8 @@ cookbook_file "/etc/init.d/maui" do
   mode "0755"
 end
 
-%w{ nfs maui }.each do |svc|
-  service svc do
-    action [ :enable, :start ]
-  end
+service "maui" do
+  action [ :enable, :start ]
 end
 
 bash "Configure qmgr" do
@@ -119,7 +124,7 @@ set server scheduler_iteration = 60
 set server node_check_rate = 150
 set server tcp_timeout = 6
 set server keep_completed = 300
-    EOF
+EOF
   EOH
 end
 
