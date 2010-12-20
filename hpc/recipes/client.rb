@@ -1,8 +1,6 @@
 include_recipe "hpc"
 
-%w{opkg-c3
-opkg-mpich
-opkg-sc3
+%w{
 opkg-switcher
 torque-client
 opkg-maui-client

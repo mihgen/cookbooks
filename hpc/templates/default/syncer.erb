@@ -1,0 +1,8 @@
+#!/bin/bash
+for host in <%= @hosts.join(' ') %>; do
+	rsync -av /etc/passwd $host:/etc/
+	rsync -av /etc/shadow $host:/etc/
+	rsync -av /etc/gshadow $host:/etc/
+	rsync -av /etc/group $host:/etc/
+done
+

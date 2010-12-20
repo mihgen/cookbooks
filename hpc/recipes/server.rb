@@ -1,23 +1,16 @@
 include_recipe "hpc"
 
-%w{opkg-c3
-opkg-c3-server
+%w{
 opkg-maui
 opkg-maui
 opkg-mpich
 opkg-mpich-server
-opkg-sc3
-opkg-sc3-server
 opkg-switcher
 opkg-switcher-server
 opkg-torque
 opkg-torque-server
 nfs-utils nfswatch
 }.each { |pkg| package pkg }
-
-package "sync-files" do
-  version "2.4-3"
-end
 
 package "libtorque-devel" do
   version "2.1.10-8.fc12"
@@ -28,10 +21,10 @@ ser_fqdn = search(:node, %q{run_list:"recipe[hpc::server]"}).map{ |e| e["fqdn"] 
 cli_ips = clients.map{ |e| e["ipaddress"] }
 cli_fqdn = clients.map{ |e| e["fqdn"] }
 
-template "/etc/c3.conf" do
-  source "c3.conf.erb" 
-  mode 0644
-  variables :hosts => cli_fqdn + ser_fqdn
+template "/opt/syncer" do
+  source "syncer.erb" 
+  mode 0755
+  variables :hosts => cli_fqdn
 end
 
 template "/etc/exports" do
