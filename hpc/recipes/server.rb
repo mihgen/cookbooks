@@ -5,8 +5,12 @@ opkg-mpich
 opkg-mpich-server
 opkg-switcher
 opkg-switcher-server
-nfs-utils nfswatch
+nfs-utils
 }.each { |pkg| package pkg }
+
+package "nfswatch" do
+  version "4.99.10-2.fc12"
+end
 
 %w{ torque-server torque-gui libtorque-devel torque-client }.each do |pkg|
   package pkg do
@@ -128,3 +132,29 @@ EOF
   EOH
 end
 
+package "httpd"
+
+%w{ ganglia-gmetad ganglia-web}.each do |pkg|
+  package pkg do
+    version "3.1.2-4.fc12"
+  end
+end
+
+%w{ httpd gmetad }.each do |svc|
+  service svc do
+    action [ :enable, :start ]
+  end
+end
+
+template "/etc/ganglia/gmetad.conf" do
+  source "gmetad.conf.erb" 
+  mode 0644
+  variables :hosts => ser_fqdn + cli_fqdn
+  notifies :restart, resources(:service => "gmetad")
+end
+
+template "/etc/httpd/conf.d/ganglia.conf" do
+  source "ganglia.conf.erb" 
+  mode 0644
+  notifies :restart, resources(:service => "httpd")
+end

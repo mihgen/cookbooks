@@ -98,3 +98,17 @@ template "/etc/profile.d/dmd.sh" do
   mode 0644
   variables(:path => "/opt/dmd2/linux/bin")
 end
+
+package "ganglia-gmond" do
+  version "3.1.2-4.fc12"
+end
+
+service "gmond" do
+  action [ :enable, :start ]
+end
+
+template "/etc/ganglia/gmond.conf" do
+  source "gmond.conf.erb" 
+  mode 0644
+  notifies :restart, resources(:service => "gmond")
+end
