@@ -8,6 +8,11 @@ opkg-switcher-server
 nfs-utils
 }.each { |pkg| package pkg }
 
+# switcher needs modules-oscar which depends on old libtcl8.4.so
+link "/usr/lib64/libtcl8.4.so" do
+  to "/usr/lib64/libtcl8.5.so"
+end
+
 package "nfswatch" do
   version "4.99.10-2.fc12"
 end
@@ -45,6 +50,7 @@ end
 template "/etc/exports" do
   source "exports.erb" 
   variables :clients => cli_ips
+  notifies :restart, resources(:service => "nfs")
 end
 
 template "/var/torque/server_priv/nodes" do

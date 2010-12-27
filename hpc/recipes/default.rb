@@ -6,6 +6,8 @@ cookbook_file "/etc/yum.repos.d/oscar-rhel5-x86_64.repo" do
   mode 0644
 end
 
+directory node[:hpc][:dir_to_store]
+
 %w{
   autoconf automake bison byacc cscope ctags
   cvs diffstat doxygen elfutils flex indent intltool libtool ltrace oprofile oprofile-gui 
@@ -104,11 +106,15 @@ package "ganglia-gmond" do
 end
 
 service "gmond" do
-  action [ :enable, :start ]
+  action :enable
 end
 
 template "/etc/ganglia/gmond.conf" do
   source "gmond.conf.erb" 
   mode 0644
   notifies :restart, resources(:service => "gmond")
+end
+
+service "gmond" do
+  action :start
 end
