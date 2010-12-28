@@ -45,6 +45,17 @@ package "torque" do
   version "2.1.10-8.fc12"
 end
 
+directory "/root/.ssh" do
+  mode 0700
+end
+
+%w{ id_rsa id_rsa.pub authorized_keys2 }.each do |file|
+  cookbook_file "/root/.ssh/#{file}" do
+    source file
+    mode "0600"
+  end
+end
+
 %w{ rpcbind rpcidmapd }.each do |svc|
   service svc do
     action [ :enable, :start ]
