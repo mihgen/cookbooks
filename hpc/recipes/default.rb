@@ -41,8 +41,10 @@ yum_package "glibc-devel" do
   ignore_failure true
 end
 
-package "torque" do
-  version "2.1.10-8.fc12"
+%w{ libtorque torque }.each do |pkg|
+  package pkg do
+    version "2.1.10-8.fc12"
+  end
 end
 
 directory "/root/.ssh" do
