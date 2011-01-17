@@ -131,3 +131,7 @@ end
 service "gmond" do
   action :start
 end
+
+service "ntpd" do
+  action :start
+end
